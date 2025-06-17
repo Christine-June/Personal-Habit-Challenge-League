@@ -1,0 +1,1 @@
+# This is where SQLAlchemy is initialized and the FLASK-Migrate set up.
