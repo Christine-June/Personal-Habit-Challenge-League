@@ -1,8 +1,0 @@
-#all packages needed will be listed here
-flask
-flask-cors
-flask-SQLAlchemy
-flask-migrate
-flask-restful
-werkzeug
-python-dotenv
