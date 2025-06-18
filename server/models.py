@@ -1,9 +1,53 @@
 from sqlalchemy_serializer import SerializerMixin
 from app import db
-
-
 from datetime import datetime, date
-from config import db
+
+### --- UserHabit Association Model --- ###
+class UserHabit(db.Model, SerializerMixin):
+    __tablename__ = 'user_habits'
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    habit_id = db.Column(db.Integer, db.ForeignKey('habits.id'), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    user = db.relationship('User', back_populates='user_habits')
+    habit = db.relationship('Habit', back_populates='user_habits')
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'user_id': self.user_id,
+            'habit_id': self.habit_id,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None
+        }
+
+
+### --- Habit Model --- ###
+class Habit(db.Model, SerializerMixin):
+    __tablename__ = 'habits'
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), unique=True, nullable=False)
+    description = db.Column(db.Text)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    user_habits = db.relationship('UserHabit', back_populates='habit', cascade='all, delete-orphan')
+    entries = db.relationship('HabitEntry', back_populates='habit', cascade='all, delete-orphan')
+    users = db.relationship('User', secondary='user_habits', back_populates='habits')
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'name': self.name,
+            'description': self.description,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None
+        }
+
 
 ### --- User Model --- ###
 class User(db.Model, SerializerMixin):
@@ -18,6 +62,7 @@ class User(db.Model, SerializerMixin):
 
     # Relationships
     user_habits = db.relationship('UserHabit', back_populates='user', cascade='all, delete-orphan')
+    habits = db.relationship('Habit', secondary='user_habits', back_populates='users')
     challenges_created = db.relationship('Challenge', foreign_keys='Challenge.created_by', back_populates='creator', cascade='all, delete-orphan')
     challenge_participations = db.relationship('ChallengeParticipant', back_populates='user', cascade='all, delete-orphan')
     challenge_entries = db.relationship('ChallengeEntry', back_populates='user', cascade='all, delete-orphan')
