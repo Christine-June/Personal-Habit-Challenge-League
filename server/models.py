@@ -1,8 +1,45 @@
 from sqlalchemy_serializer import SerializerMixin
-from sqlalchemy.ext.associationproxy import association_proxy
-from config import db
 
 # Models go here!
+
+class User(db.Model, SerializerMixin):
+    __tablename__ = 'users'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(80), unique=True, nullable=False)
+    email = db.Column(db.String(120), unique=True, nullable=False)
+    password_hash = db.Column(db.String(255), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Relationships based on the diagram
+    user_habits = db.relationship('UserHabit', back_populates='user', cascade='all, delete-orphan')
+    challenges_created = db.relationship('Challenge', foreign_keys='Challenge.created_by', back_populates='creator', cascade='all, delete-orphan')
+    challenge_participants = db.relationship('ChallengeParticipant', back_populates='user', cascade='all, delete-orphan')
+    challenge_entries = db.relationship('ChallengeEntry', back_populates='user', cascade='all, delete-orphan')
+    habit_entries = db.relationship('HabitEntry', back_populates='user', cascade='all, delete-orphan')
+    
+    # Serialization rules
+    serialize_rules = (
+        '-user_habits.user',
+        '-challenges_created.creator',
+        '-challenge_participants.user',
+        '-challenge_entries.user',
+        '-habit_entries.user',
+        '-password_hash'
+    )
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'username': self.username,
+            'email': self.email,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None
+        }
+    
+    def __repr__(self):
+        return f'<User {self.username}>'
 
 class HabitEntry(db.Model, SerializerMixin):
     __tablename__ = 'habit_entries'
