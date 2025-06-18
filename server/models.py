@@ -1,5 +1,4 @@
 from sqlalchemy_serializer import SerializerMixin
-from sqlalchemy.ext.associationproxy import association_proxy
 from datetime import datetime
 
 from config import db
@@ -44,32 +43,6 @@ class User(db.Model, SerializerMixin):
     
     def __repr__(self):
         return f'<User {self.username}>'
-
-class Habit(db.Model, SerializerMixin):
-    __tablename__ = 'habits'
-    
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(100), nullable=False)
-    description = db.Column(db.Text)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    
-    # Relationships
-    user_habits = db.relationship('UserHabit', back_populates='habit', cascade='all, delete-orphan')
-    habit_entries = db.relationship('HabitEntry', back_populates='habit', cascade='all, delete-orphan')
-    
-    serialize_rules = ('-user_habits.habit', '-habit_entries.habit')
-    
-    def to_dict(self):
-        return {
-            'id': self.id,
-            'name': self.name,
-            'description': self.description,
-            'created_at': self.created_at.isoformat() if self.created_at else None
-        }
-    
-    def __repr__(self):
-        return f'<Habit {self.name}>'
-
 
 class HabitEntry(db.Model, SerializerMixin):
     __tablename__ = 'habit_entries'
