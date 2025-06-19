@@ -1,9 +1,6 @@
 from sqlalchemy_serializer import SerializerMixin
-from app import db
-
-
 from datetime import datetime, date
-from config import db
+from server.app import db
 
 ### --- User Model --- ###
 class User(db.Model, SerializerMixin):

@@ -8,13 +8,13 @@ db = SQLAlchemy()
 migrate = Migrate()
 
 
-from routes.user_routes import user_bp
-from routes.habit_routes import habit_bp
-from routes.challenge_routes import challenge_bp
-from routes.user_habit_routes import user_habit_bp
-from routes.challenge_participant_routes import challenge_participant_bp
-from routes.challenge_entry_routes import challenge_entry_bp
-from routes.habit_entry_routes import habit_entry_bp
+from server.routes.user_routes import user_bp
+from server.routes.habit_routes import habit_bp
+from server.routes.challenge_routes import challenge_bp
+from server.routes.user_habit_routes import user_habit_bp
+from server.routes.challenge_participant_routes import challenge_participant_bp
+from server.routes.challenge_entry_routes import challenge_entry_bp
+from server.routes.habit_entry_routes import habit_entry_bp
 
 def create_app():
     app = Flask(__name__)
