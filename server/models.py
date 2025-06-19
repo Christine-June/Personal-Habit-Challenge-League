@@ -1,7 +1,6 @@
 from sqlalchemy_serializer import SerializerMixin
+from app import db
 from datetime import datetime, date
-from server.app import db
-
 ### --- User Model --- ###
 class User(db.Model, SerializerMixin):
     __tablename__ = 'users'
@@ -15,6 +14,7 @@ class User(db.Model, SerializerMixin):
 
     # Relationships
     user_habits = db.relationship('UserHabit', back_populates='user', cascade='all, delete-orphan')
+    habits = db.relationship('Habit', secondary='user_habits', back_populates='users')
     challenges_created = db.relationship('Challenge', foreign_keys='Challenge.created_by', back_populates='creator', cascade='all, delete-orphan')
     challenge_participations = db.relationship('ChallengeParticipant', back_populates='user', cascade='all, delete-orphan')
     challenge_entries = db.relationship('ChallengeEntry', back_populates='user', cascade='all, delete-orphan')
