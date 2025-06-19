@@ -1,8 +1,8 @@
 from flask import Blueprint, jsonify, request
-from ..models import User, db
 from werkzeug.security import generate_password_hash, check_password_hash
+from models import User, db 
 
-user_bp = Blueprint('user_bp', __name__)
+user_bp = Blueprint('user_bp', __name__, url_prefix='/users')
 
 @user_bp.route('/register', methods=['POST'])
 def register():
@@ -101,8 +101,5 @@ def delete_user(user_id):
 
 @user_bp.route('/', methods=['GET'])
 def get_users():
-    try:
-        users = User.query.all()
-        return jsonify([user.to_dict() for user in users]), 200
-    except Exception as e:
-        return jsonify({"error": f"Failed to fetch users: {e}"}), 500
+    users = User.query.all()
+    return jsonify([user.to_dict() for user in users]), 200
