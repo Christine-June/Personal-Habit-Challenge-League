@@ -1,6 +1,7 @@
 from flask import Blueprint, request, jsonify
 from models import Challenge, db
 
+
 challenge_bp = Blueprint('challenge_bp', __name__, url_prefix='/challenges')
 
 @challenge_bp.route('/', methods=['GET'])

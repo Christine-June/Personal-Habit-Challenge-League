@@ -1,7 +1,9 @@
-from flask import request, session
+from flask import request, session, Blueprint
 from flask_restful import Resource
 from models import db, ChallengeParticipant, Challenge
 from datetime import date
+
+challenge_participant_bp = Blueprint('challenge_participant_bp', __name__, url_prefix='/challenge-participants')
 
 
 class ChallengeParticipantRoutes(Resource):
@@ -115,3 +117,9 @@ class ParticipationStatus(Resource):
         ).first() is not None
 
         return {"joined": joined}, 200
+
+
+# Example route (replace with your real routes)
+@challenge_participant_bp.route('/', methods=['GET'])
+def get_challenge_participants():
+    return {"message": "Challenge participants endpoint works!"}
