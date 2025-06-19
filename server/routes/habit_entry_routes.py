@@ -1,7 +1,7 @@
 from flask import Blueprint, request, jsonify
 from datetime import datetime, date
 from functools import wraps
-from models import db, HabitEntry
+from models import HabitEntry, db  # Importing HabitEntry and db from the models
 
 habit_entry_bp = Blueprint('habit_entries', __name__, url_prefix='/habit-entries')
 

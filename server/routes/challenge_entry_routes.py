@@ -1,7 +1,9 @@
-from flask import request, session
+from flask import request, session, Blueprint
 from flask_restful import Resource
 from models import db, ChallengeEntry, ChallengeParticipant, Challenge
 from datetime import date
+
+challenge_entry_bp = Blueprint('challenge_entry_bp', __name__, url_prefix='/challenge-entries')
 
 
 class ChallengeEntryRoutes(Resource):
@@ -82,3 +84,9 @@ class ChallengeEntryRoutes(Resource):
                 "date": str(entry.date)
             }
         }, 201
+
+
+# Example route
+@challenge_entry_bp.route('/', methods=['GET'])
+def get_entries():
+    return {"message": "Challenge entries endpoint works!"}
