@@ -12,38 +12,44 @@ with app.app_context():
     print("✅ Tables recreated successfully!")
 
 with app.app_context():
+    print("🧨 Dropping and recreating all tables...")
+    db.drop_all()
+    db.create_all()
+
     print("🌱 Seeding Users...")
     users = []
     for _ in range(5):
+        username = fake.user_name()
         user = User(
-            username=fake.user_name(),
+            username=username,
             email=fake.email(),
-            password_hash="password123"
+            avatar_url=generate_avatar(username)  # Avatar added here
         )
+        user.set_password("password123")  # Uses real hashing
         db.session.add(user)
         users.append(user)
-    db.session.commit()  # commit USERS so they get IDs
+    db.session.commit()
 
     print("🌱 Seeding Habits...")
     habits = []
     for _ in range(3):
         habit = Habit(
-            name=fake.word(),
-            description=fake.sentence(),
-            user_id=random.choice(users).id  # assign a valid user_id
-        )
-        db.session.add(habit)
-        habits.append(habit)
-    db.session.commit()  # commit HABITS if you use them later
-
+        name=fake.word(),
+        description=fake.sentence(),
+        frequency="daily",
+        user_id=random.choice(users).id  # ✅ add this
+    )
+    db.session.add(habit)
+    habits.append(habit)
+    db.session.commit()
     print("🌱 Seeding Challenges...")
     challenges = []
     for _ in range(2):
         start = date.today()
         end = start + timedelta(days=7)
         challenge = Challenge(
-            name=fake.word(),
-            description=fake.sentence(),
+            name=fake.catch_phrase(),  
+            description=fake.text(max_nb_chars=80),
             created_by=random.choice(users).id,
             start_date=start,
             end_date=end

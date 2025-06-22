@@ -1,5 +1,6 @@
 from datetime import datetime, date
 from config import db
+from werkzeug.security import generate_password_hash, check_password_hash  # 🔑 Import for password hashing
 
 ### --- User Model --- ###
 class User(db.Model):
@@ -9,6 +10,7 @@ class User(db.Model):
     username = db.Column(db.String(80), unique=True, nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
     password_hash = db.Column(db.String(128), nullable=False)
+    avatar_url = db.Column(db.String(255), nullable=True)  # ✅ Added avatar field
 
     # Relationships
     habits = db.relationship("Habit", back_populates="user", cascade="all, delete-orphan")
@@ -26,8 +28,15 @@ class User(db.Model):
             "id": self.id,
             "username": self.username,
             "email": self.email,
+            "avatarUrl": self.avatar_url or "/placeholder-avatar.svg"  # Default avatar fallback
         }
 
+    # ✅ Password hashing methods
+    def set_password(self, password):
+        self.password_hash = generate_password_hash(password)
+
+    def check_password(self, password):
+        return check_password_hash(self.password_hash, password)
 
 ### --- Habit Model --- ###
 class Habit(db.Model):
@@ -36,6 +45,7 @@ class Habit(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(255), nullable=False)
     description = db.Column(db.Text)
+    frequency = db.Column(db.String(50))  
     user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
 
     # Relationships
@@ -51,6 +61,7 @@ class Habit(db.Model):
             "id": self.id,
             "name": self.name,
             "description": self.description,
+            "frequency": self.frequency,
             "user_id": self.user_id,
         }
 

@@ -4,7 +4,7 @@ from models import Challenge, db
 
 challenge_bp = Blueprint('challenge_bp', __name__, url_prefix='/challenges')
 
-@challenge_bp.route('/', methods=['GET'])
+@challenge_bp.route('', methods=['GET'])
 def get_challenges():
     challenges = Challenge.query.all()
     return jsonify([c.to_dict() for c in challenges])
@@ -41,3 +41,6 @@ def delete_challenge(id):
     db.session.delete(challenge)
     db.session.commit()
     return jsonify({"message": "Challenge deleted"})
+@challenge_bp.route('/test')
+def test_route():
+    return {"message": "Challenge route is working!"}
