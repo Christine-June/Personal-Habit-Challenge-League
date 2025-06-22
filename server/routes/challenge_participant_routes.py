@@ -1,14 +1,15 @@
-from flask import request, session, Blueprint
+from flask import request, session, Blueprint, jsonify
 from flask_restful import Resource
 from models import db, ChallengeParticipant, Challenge
 from datetime import date
 
-challenge_participant_bp = Blueprint('challenge_participant_bp', __name__, url_prefix='/challenge-participants')
+challenge_participant_bp = Blueprint('challenge_participant_bp', __name__)
+# Make sure to also register this in app.py
 
+# ----- RESTful Resource Classes -----
 
 class ChallengeParticipantRoutes(Resource):
     def get(self):
-        """View all challenges the user has joined"""
         user_id = session.get("user_id")
         if not user_id:
             return {"error": "Unauthorized"}, 401
@@ -29,7 +30,6 @@ class ChallengeParticipantRoutes(Resource):
         ], 200
 
     def post(self):
-        """Join a challenge"""
         user_id = session.get("user_id")
         if not user_id:
             return {"error": "Unauthorized"}, 401
@@ -45,23 +45,18 @@ class ChallengeParticipantRoutes(Resource):
         if not challenge:
             return {"error": "Challenge not found"}, 404
 
-        # Prevent duplicate join
         already_joined = ChallengeParticipant.query.filter_by(
             user_id=user_id, challenge_id=challenge_id
         ).first()
         if already_joined:
             return {"error": "Already joined this challenge"}, 409
 
-        # Prevent joining if challenge has started
         if challenge.start_date and challenge.start_date <= date.today():
-            return {"error": "Challenge already started, can't join"}, 403
+            return {"error": "Challenge already started"}, 403
 
-        # Limit concurrent active joins
-        active_count = ChallengeParticipant.query.filter_by(user_id=user_id).count()
-        if active_count >= 3:
-            return {"error": "Limit reached: only 3 concurrent challenges allowed"}, 403
+        if ChallengeParticipant.query.filter_by(user_id=user_id).count() >= 3:
+            return {"error": "Limit reached: 3 challenges max"}, 403
 
-        # Create new participation
         participation = ChallengeParticipant(
             user_id=user_id,
             challenge_id=challenge_id,
@@ -71,7 +66,6 @@ class ChallengeParticipantRoutes(Resource):
         db.session.add(participation)
         db.session.commit()
 
-        # Return current rank (e.g., 15th to join)
         rank = ChallengeParticipant.query.filter_by(challenge_id=challenge_id).count()
 
         return {
@@ -81,7 +75,6 @@ class ChallengeParticipantRoutes(Resource):
         }, 201
 
     def delete(self):
-        """Leave a challenge"""
         user_id = session.get("user_id")
         if not user_id:
             return {"error": "Unauthorized"}, 401
@@ -89,25 +82,20 @@ class ChallengeParticipantRoutes(Resource):
         data = request.get_json()
         challenge_id = data.get("challenge_id")
 
-        if not challenge_id:
-            return {"error": "Missing challenge_id"}, 400
-
         participation = ChallengeParticipant.query.filter_by(
             user_id=user_id, challenge_id=challenge_id
         ).first()
-
         if not participation:
-            return {"error": "Not a participant in this challenge"}, 404
+            return {"error": "Not participating"}, 404
 
         db.session.delete(participation)
         db.session.commit()
 
-        return {"message": "Left the challenge successfully"}, 200
+        return {"message": "Left the challenge"}, 200
 
 
 class ParticipationStatus(Resource):
     def get(self, challenge_id):
-        """Check if the user has joined a specific challenge"""
         user_id = session.get("user_id")
         if not user_id:
             return {"error": "Unauthorized"}, 401
@@ -118,8 +106,27 @@ class ParticipationStatus(Resource):
 
         return {"joined": joined}, 200
 
+# ----- Blueprint-style endpoints -----
 
-# Example route (replace with your real routes)
-@challenge_participant_bp.route('/', methods=['GET'])
-def get_challenge_participants():
-    return {"message": "Challenge participants endpoint works!"}
+@challenge_participant_bp.route('/challenges/<int:challenge_id>/participants', methods=['GET'])
+def list_participants(challenge_id):
+    participants = ChallengeParticipant.query.filter_by(challenge_id=challenge_id).all()
+    return jsonify([p.to_dict() for p in participants]), 200
+
+@challenge_participant_bp.route('/challenges/<int:challenge_id>/participants', methods=['POST'])
+def add_participant(challenge_id):
+    data = request.get_json()
+    user_id = data.get("user_id")
+
+    if not user_id:
+        return {"error": "Missing user_id"}, 400
+
+    if ChallengeParticipant.query.filter_by(user_id=user_id, challenge_id=challenge_id).first():
+        return jsonify({"error": "User already joined"}), 409
+
+    participant = ChallengeParticipant(user_id=user_id, challenge_id=challenge_id, joined_date=date.today())
+    db.session.add(participant)
+    db.session.commit()
+
+    return jsonify(participant.to_dict()), 201
+

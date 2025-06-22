@@ -18,6 +18,7 @@ from routes.user_habit_routes import user_habit_bp
 
 def create_app():
     app = Flask(__name__)
+    CORS(app)
     app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///app.db'
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     app.json.compact = False
@@ -25,7 +26,6 @@ def create_app():
     db.init_app(app)
     migrate = Migrate(app, db)
     api = Api(app)
-    CORS(app)
 
     # Register blueprints
     app.register_blueprint(user_bp)
