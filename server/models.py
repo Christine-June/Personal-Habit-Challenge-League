@@ -94,6 +94,7 @@ class HabitEntry(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
     habit_id = db.Column(db.Integer, db.ForeignKey("habits.id"), nullable=False)
     progress = db.Column(db.String(255), nullable=False)
+    notes = db.Column(db.String(255))  # optional notes field
     date = db.Column(db.Date, default=date.today)
 
     # Relationships
@@ -104,6 +105,10 @@ class HabitEntry(db.Model):
         db.UniqueConstraint("user_id", "habit_id", "date", name="unique_habit_entry_per_day"),
     )
 
+    @staticmethod
+    def validate_progress(value):
+        return value in ['completed', 'skipped', 'partial']
+
     def __repr__(self):
         return f"<HabitEntry user_id={self.user_id} habit_id={self.habit_id} date={self.date}>"
 
@@ -113,6 +118,7 @@ class HabitEntry(db.Model):
             "user_id": self.user_id,
             "habit_id": self.habit_id,
             "progress": self.progress,
+            "notes": self.notes,
             "date": self.date.isoformat() if self.date else None,
         }
 

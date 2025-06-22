@@ -1,10 +1,15 @@
 from app import app, db
-from models import User, Habit, Challenge
+from models import User, Habit, Challenge, HabitEntry
 from faker import Faker
 import random
 from datetime import date, timedelta
 
 fake = Faker()
+with app.app_context():
+    print("🧨 Dropping and recreating all tables...")
+    db.drop_all()
+    db.create_all()
+    print("✅ Tables recreated successfully!")
 
 with app.app_context():
     print("🌱 Seeding Users...")
@@ -46,5 +51,19 @@ with app.app_context():
         db.session.add(challenge)
         challenges.append(challenge)
     db.session.commit()
-
+    print("🌱 Seeding Habit Entries...")
+    entries = []
+    for user in users:
+        for habit in habits:
+            entry = HabitEntry(
+                user_id=user.id,
+                habit_id=habit.id,
+                progress=random.choice(['completed', 'skipped', 'partial']),
+                notes=fake.sentence(),
+                date=date.today()
+            )
+            db.session.add(entry)
+            entries.append(entry)
+    db.session.commit()
+    print("✅ Done seeding Habit Entries!")
     print("✅ Done seeding!")
