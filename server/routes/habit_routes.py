@@ -19,20 +19,20 @@ def get_habit(habit_id):
     return jsonify({"error": "Habit not found"}), 404
 
 # Create a new habit
-@habits_bp.route('/', methods=['POST'])
+@habits_bp.route("/", methods=["POST"])
 def create_habit():
     data = request.get_json()
-    name = data.get('name')
-    description = data.get('description')
-    user_id = data.get('user_id')
-
-    if not name or not user_id:
-        return jsonify({"error": "Name and user_id are required"}), 400
-
-    habit = Habit(name=name, description=description, user_id=user_id)
-    db.session.add(habit)
+    new_habit = Habit(
+        name=data.get("name"),
+        description=data.get("description"),
+        frequency=data.get("frequency"),
+        user_id=data.get("user_id")  # ✅ use this instead of created_by
+    )
+    db.session.add(new_habit)
     db.session.commit()
-    return jsonify(habit.to_dict()), 201
+    return jsonify(new_habit.to_dict()), 201
+
+
 
 # Update a habit
 @habits_bp.route('/<int:habit_id>', methods=['PATCH'])

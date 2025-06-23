@@ -57,13 +57,17 @@ class Habit(db.Model):
         return f"<Habit {self.name}>"
 
     def to_dict(self):
-        return {
-            "id": self.id,
-            "name": self.name,
-            "description": self.description,
-            "frequency": self.frequency,
-            "user_id": self.user_id,
-        }
+      return {
+        "id": self.id,
+        "name": self.name,
+        "description": self.description,
+        "frequency": self.frequency,
+        "user_id": self.user_id,
+        "user": {
+            "id": self.user.id,
+            "username": self.user.username
+        } if self.user else None
+    }
 
 
 ### --- UserHabit Model --- ###
