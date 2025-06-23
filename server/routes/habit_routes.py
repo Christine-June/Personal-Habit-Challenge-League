@@ -5,8 +5,10 @@ from datetime import date
 habits_bp = Blueprint('habits_bp', __name__, url_prefix='/habits')
 
 # Get all habits
-
-
+@habits_bp.route('/', methods=['GET'])  
+def get_habits():
+    habits = Habit.query.all()
+    return jsonify([habit.to_dict() for habit in habits]), 200
 # Get a single habit by ID
 @habits_bp.route('/<int:habit_id>', methods=['GET'])
 def get_habit(habit_id):
