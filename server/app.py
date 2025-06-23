@@ -43,6 +43,7 @@ def create_app():
     def handle_options():
         if request.method == 'OPTIONS':
             return '', 200
+        
 
     # ✅ Register blueprints
     app.register_blueprint(user_bp)
