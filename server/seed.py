@@ -4,18 +4,21 @@ from faker import Faker
 import random
 from datetime import date, timedelta
 
+# ✅ Avatar URL generator
+def generate_avatar(username):
+    return f"https://robohash.org/{username}.png"  # You can use DiceBear too if you prefer
+
+# ✅ Faker setup
 fake = Faker()
+
 with app.app_context():
+    # 🧨 Reset database
     print("🧨 Dropping and recreating all tables...")
     db.drop_all()
     db.create_all()
     print("✅ Tables recreated successfully!")
 
-with app.app_context():
-    print("🧨 Dropping and recreating all tables...")
-    db.drop_all()
-    db.create_all()
-
+    # 🌱 Seeding Users
     print("🌱 Seeding Users...")
     users = []
     for _ in range(5):
@@ -23,32 +26,35 @@ with app.app_context():
         user = User(
             username=username,
             email=fake.email(),
-            avatar_url=generate_avatar(username)  # Avatar added here
+            avatar_url=generate_avatar(username)
         )
-        user.set_password("password123")  # Uses real hashing
+        user.set_password("password123")  # Replace with hashed password logic if needed
         db.session.add(user)
         users.append(user)
     db.session.commit()
 
+    # 🌱 Seeding Habits
     print("🌱 Seeding Habits...")
     habits = []
     for _ in range(3):
         habit = Habit(
-        name=fake.word(),
-        description=fake.sentence(),
-        frequency="daily",
-        user_id=random.choice(users).id  # ✅ add this
-    )
-    db.session.add(habit)
-    habits.append(habit)
+            name=fake.word(),
+            description=fake.sentence(),
+            frequency="daily",
+            user_id=random.choice(users).id
+        )
+        db.session.add(habit)
+        habits.append(habit)
     db.session.commit()
+
+    # 🌱 Seeding Challenges
     print("🌱 Seeding Challenges...")
     challenges = []
     for _ in range(2):
         start = date.today()
         end = start + timedelta(days=7)
         challenge = Challenge(
-            name=fake.catch_phrase(),  
+            name=fake.catch_phrase(),
             description=fake.text(max_nb_chars=80),
             created_by=random.choice(users).id,
             start_date=start,
@@ -57,6 +63,8 @@ with app.app_context():
         db.session.add(challenge)
         challenges.append(challenge)
     db.session.commit()
+
+    # 🌱 Seeding Habit Entries
     print("🌱 Seeding Habit Entries...")
     entries = []
     for user in users:
@@ -71,5 +79,6 @@ with app.app_context():
             db.session.add(entry)
             entries.append(entry)
     db.session.commit()
+
     print("✅ Done seeding Habit Entries!")
-    print("✅ Done seeding!")
+    print("✅ All seeding complete!")

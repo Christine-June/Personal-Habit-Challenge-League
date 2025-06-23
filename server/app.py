@@ -4,7 +4,15 @@ from flask_cors import CORS
 from flask_restful import Api
 
 from config import db
-from models import User, Habit, UserHabit, Challenge, HabitEntry, ChallengeEntry, ChallengeParticipant
+from models import (
+    User,
+    Habit,
+    UserHabit,
+    Challenge,
+    HabitEntry,
+    ChallengeEntry,
+    ChallengeParticipant,
+)
 
 # Import your blueprints
 from routes.user_routes import user_bp
@@ -19,8 +27,8 @@ from routes.user_habit_routes import user_habit_bp
 def create_app():
     app = Flask(__name__)
     CORS(app)
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///app.db'
-    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+    app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///app.db"
+    app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
     app.json.compact = False
 
     db.init_app(app)
@@ -36,7 +44,7 @@ def create_app():
     app.register_blueprint(challenge_participant_bp)
     app.register_blueprint(user_habit_bp)
 
-    @app.route('/')
+    @app.route("/")
     def index():
         return {"message": "Welcome to the API!"}, 200
 

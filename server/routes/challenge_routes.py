@@ -1,46 +1,63 @@
 from flask import Blueprint, request, jsonify
 from models import Challenge, db
 
+# Blueprint with a prefix of /challenges
+challenge_bp = Blueprint("challenge_bp", __name__, url_prefix="/challenges")
 
-challenge_bp = Blueprint('challenge_bp', __name__, url_prefix='/challenges')
 
-@challenge_bp.route('', methods=['GET'])
+# ✅ Handles GET /challenges and GET /challenges/
+@challenge_bp.route("", methods=["GET"])
+@challenge_bp.route("/", methods=["GET"])
 def get_challenges():
     challenges = Challenge.query.all()
-    return jsonify([c.to_dict() for c in challenges])
+    return jsonify([c.to_dict() for c in challenges]), 200
 
-@challenge_bp.route('/<int:id>', methods=['GET'])
+
+# ✅ Get a single challenge by ID
+@challenge_bp.route("/<int:id>", methods=["GET"])
 def get_challenge(id):
     challenge = Challenge.query.get_or_404(id)
-    return jsonify(challenge.to_dict())
+    return jsonify(challenge.to_dict()), 200
 
-@challenge_bp.route('/', methods=['POST'])
+
+# ✅ Create a new challenge
+@challenge_bp.route("/", methods=["POST"])
 def create_challenge():
     data = request.get_json()
     new_challenge = Challenge(
-        name=data.get('name'),
-        description=data.get('description'),
-        created_by=data.get('created_by')
+        name=data.get("name"),
+        description=data.get("description"),
+        created_by=data.get("created_by"),
     )
     db.session.add(new_challenge)
     db.session.commit()
     return jsonify(new_challenge.to_dict()), 201
 
-@challenge_bp.route('/<int:id>', methods=['PATCH'])
+
+# ✅ Update an existing challenge
+@challenge_bp.route("/<int:id>", methods=["PATCH"])
 def update_challenge(id):
     challenge = Challenge.query.get_or_404(id)
     data = request.get_json()
-    challenge.name = data.get('name', challenge.name)
-    challenge.description = data.get('description', challenge.description)
+    challenge.name = data.get("name", challenge.name)
+    challenge.description = data.get("description", challenge.description)
+    challenge.start_date = data.get("start_date", challenge.start_date)
+    challenge.end_date = data.get("end_date", challenge.end_date)
+    # Add other fields as needed
     db.session.commit()
-    return jsonify(challenge.to_dict())
+    return jsonify(challenge.to_dict()), 200
 
-@challenge_bp.route('/<int:id>', methods=['DELETE'])
+
+# ✅ Delete a challenge
+@challenge_bp.route("/<int:id>", methods=["DELETE"])
 def delete_challenge(id):
     challenge = Challenge.query.get_or_404(id)
     db.session.delete(challenge)
     db.session.commit()
-    return jsonify({"message": "Challenge deleted"})
-@challenge_bp.route('/test')
+    return jsonify({"message": "Challenge deleted"}), 200
+
+
+# ✅ Test route (optional)
+@challenge_bp.route("/test", methods=["GET"])
 def test_route():
-    return {"message": "Challenge route is working!"}
+    return jsonify({"message": "Challenge route is working!"}), 200
