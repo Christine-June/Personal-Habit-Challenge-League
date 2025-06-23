@@ -1,5 +1,7 @@
 from flask import Blueprint, request, jsonify
 from models import Challenge, db
+from datetime import datetime
+
 
 # Blueprint with a prefix of /challenges
 challenge_bp = Blueprint("challenge_bp", __name__, url_prefix="/challenges")
@@ -28,6 +30,8 @@ def create_challenge():
         name=data.get("name"),
         description=data.get("description"),
         created_by=data.get("created_by"),
+        start_date=datetime.strptime(data.get("start_date"), "%Y-%m-%d").date() if data.get("start_date") else None,
+        end_date=datetime.strptime(data.get("end_date"), "%Y-%m-%d").date() if data.get("end_date") else None,
     )
     db.session.add(new_challenge)
     db.session.commit()
