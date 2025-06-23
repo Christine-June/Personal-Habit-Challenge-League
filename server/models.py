@@ -1,6 +1,6 @@
 from datetime import datetime, date
 from config import db
-from werkzeug.security import generate_password_hash, check_password_hash  # 🔑 Import for password hashing
+from werkzeug.security import generate_password_hash, check_password_hash  # <-- Added this line
 
 ### --- User Model --- ###
 class User(db.Model):
@@ -20,6 +20,12 @@ class User(db.Model):
     challenge_participations = db.relationship("ChallengeParticipant", back_populates="user", cascade="all, delete-orphan")
     challenge_entries = db.relationship("ChallengeEntry", back_populates="user", cascade="all, delete-orphan")
 
+    def set_password(self, password):
+        self.password_hash = generate_password_hash(password)
+
+    def check_password(self, password):
+        return check_password_hash(self.password_hash, password)
+
     def __repr__(self):
         return f"<User {self.username}>"
 
@@ -37,6 +43,8 @@ class User(db.Model):
 
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
+
+        
 
 ### --- Habit Model --- ###
 class Habit(db.Model):
@@ -69,7 +77,6 @@ class Habit(db.Model):
         } if self.user else None
     }
 
-
 ### --- UserHabit Model --- ###
 class UserHabit(db.Model):
     __tablename__ = "user_habits"
@@ -99,7 +106,6 @@ class UserHabit(db.Model):
             "start_date": self.start_date.isoformat() if self.start_date else None,
             "end_date": self.end_date.isoformat() if self.end_date else None,
         }
-
 
 ### --- HabitEntry Model --- ###
 class HabitEntry(db.Model):
@@ -136,7 +142,6 @@ class HabitEntry(db.Model):
             "notes": self.notes,
             "date": self.date.isoformat() if self.date else None,
         }
-
 
 ### --- Challenge Model --- ###
 class Challenge(db.Model):
@@ -175,7 +180,6 @@ class Challenge(db.Model):
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
         }
 
-
 ### --- ChallengeParticipant Model --- ###
 class ChallengeParticipant(db.Model):
     __tablename__ = "challenge_participants"
@@ -205,7 +209,6 @@ class ChallengeParticipant(db.Model):
             "joined_date": self.joined_date.isoformat() if self.joined_date else None,
             "reason": self.reason,
         }
-
 
 ### --- ChallengeEntry Model --- ###
 class ChallengeEntry(db.Model):
