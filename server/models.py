@@ -19,6 +19,7 @@ class User(db.Model):
     challenges_created = db.relationship("Challenge", back_populates="creator", cascade="all, delete-orphan")
     challenge_participations = db.relationship("ChallengeParticipant", back_populates="user", cascade="all, delete-orphan")
     challenge_entries = db.relationship("ChallengeEntry", back_populates="user", cascade="all, delete-orphan")
+    messages = db.relationship("Message", back_populates="user", cascade="all, delete-orphan")
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
@@ -44,7 +45,7 @@ class User(db.Model):
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
 
-        
+
 
 ### --- Habit Model --- ###
 class Habit(db.Model):
@@ -238,4 +239,29 @@ class ChallengeEntry(db.Model):
             "challenge_id": self.challenge_id,
             "progress": self.progress,
             "date": self.date.isoformat() if self.date else None,
+        }
+
+### --- Message Model --- ###
+class Message(db.Model):
+    __tablename__ = "messages"
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    content = db.Column(db.String, nullable=False)
+    reply_to_id = db.Column(db.Integer, db.ForeignKey('messages.id'), nullable=True)
+    timestamp = db.Column(db.DateTime, server_default=db.func.now())
+
+    # Relationships
+    user = db.relationship('User', back_populates='messages')
+    replies = db.relationship('Message', back_populates='parent', remote_side=[id], cascade="all, delete-orphan")
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "user_id": self.user_id,
+            "username": self.user.username,
+            "content": self.content,
+            "reply_to_id": self.reply_to_id,
+            "timestamp": self.timestamp.isoformat(),
+            "replies": [reply.to_dict() for reply in self.replies]
         }

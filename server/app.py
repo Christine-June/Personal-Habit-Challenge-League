@@ -22,6 +22,7 @@ from routes.challenge_routes import challenge_bp
 from routes.challenge_entry_routes import challenge_entry_bp
 from routes.challenge_participant_routes import challenge_participant_bp
 from routes.user_habit_routes import user_habit_bp
+from routes.message_routes import message_bp
 
 
 def create_app():
@@ -41,9 +42,8 @@ def create_app():
     # ✅ Allow handling of OPTIONS requests manually
     @app.before_request
     def handle_options():
-        if request.method == 'OPTIONS':
-            return '', 200
-        
+        if request.method == "OPTIONS":
+            return "", 200
 
     # ✅ Register blueprints
     app.register_blueprint(user_bp)
@@ -53,27 +53,28 @@ def create_app():
     app.register_blueprint(challenge_entry_bp)
     app.register_blueprint(challenge_participant_bp)
     app.register_blueprint(user_habit_bp)
+    app.register_blueprint(message_bp)
 
     @app.route("/")
     def index():
         return {"message": "Welcome to the API!"}, 200
 
     # ✅ Signup route
-    @app.route('/signup', methods=['POST'])
+    @app.route("/signup", methods=["POST"])
     def signup():
         data = request.get_json()
-        username = data.get('username')
-        email = data.get('email')
-        password = data.get('password')
+        username = data.get("username")
+        email = data.get("email")
+        password = data.get("password")
 
         if not username or not email or not password:
-            return jsonify({'error': 'All fields are required'}), 400
+            return jsonify({"error": "All fields are required"}), 400
 
         if User.query.filter_by(username=username).first():
-            return jsonify({'error': 'Username already exists'}), 409
+            return jsonify({"error": "Username already exists"}), 409
 
         if User.query.filter_by(email=email).first():
-            return jsonify({'error': 'Email already registered'}), 409
+            return jsonify({"error": "Email already registered"}), 409
 
         new_user = User(username=username, email=email)
         new_user.set_password(password)
@@ -84,21 +85,22 @@ def create_app():
         return jsonify(new_user.to_dict()), 201
 
     # ✅ Login route
-    @app.route('/login', methods=['POST'])
+    @app.route("/login", methods=["POST"])
     def login():
         data = request.get_json()
-        username = data.get('username')
-        password = data.get('password')
+        username = data.get("username")
+        password = data.get("password")
 
         if not username or not password:
-            return jsonify({'error': 'Username and password required'}), 400
+            return jsonify({"error": "Username and password required"}), 400
 
         user = User.query.filter_by(username=username).first()
 
         if user and user.check_password(password):
-            return jsonify(user.to_dict()), 200
+            # Return user data under 'user' key for frontend compatibility
+            return jsonify({"user": user.to_dict()}), 200
         else:
-            return jsonify({'error': 'Invalid username or password'}), 401
+            return jsonify({"error": "Invalid username or password"}), 401
 
     return app
 
