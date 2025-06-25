@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "ac753532b41e577b48c8192817c3948228dc563b052bdf3441cc87b4303a975a"
+            "sha256": "a753becceb001bafff02456824612dbfefbba16fbccd7fe0e495a001a89d0194"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -420,6 +420,15 @@
             ],
             "markers": "python_version >= '3.8'",
             "version": "==3.22.0"
+        },
+        "marshmallow-sqlalchemy": {
+            "hashes": [
+                "sha256:57c532999dd62f84cc1954a82c189badc3a3f50b99dc142c811aaf9534e85091",
+                "sha256:5c2f77c1e33808dac7765322cf7a440b807425623c6d9f9dd476702e45cc8de1"
+            ],
+            "index": "pypi",
+            "markers": "python_version >= '3.8'",
+            "version": "==1.1.1"
         },
         "matplotlib-inline": {
             "hashes": [

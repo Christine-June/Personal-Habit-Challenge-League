@@ -37,3 +37,6 @@ class MessageSchema(ma.SQLAlchemyAutoSchema):
     class Meta:
         model = Message
         load_instance = True
+
+user_schema = UserSchema()
+users_schema = UserSchema(many=True)
