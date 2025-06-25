@@ -40,6 +40,7 @@ def register_auth_routes(app):
         username = data.get('username')
         email = data.get('email')
         password = data.get('password')
+        avatar_url = data.get('avatar_url')  # <-- get avatar_url from request
 
         if not username or not email or not password:
             return {"error": "Username, email, and password are required"}, 400
@@ -50,7 +51,12 @@ def register_auth_routes(app):
             return {"error": "Email already exists"}, 409
 
         hashed_password = generate_password_hash(password).decode('utf-8')
-        new_user = User(username=username, email=email, password_hash=hashed_password)
+        new_user = User(
+            username=username,
+            email=email,
+            password_hash=hashed_password,
+            avatar_url=avatar_url  # <-- save avatar_url
+        )
         db.session.add(new_user)
         db.session.commit()
-        return user_schema.dump(new_user), 201
+        return {"success": True, "user": user_schema.dump(new_user)}, 201

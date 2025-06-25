@@ -1,4 +1,4 @@
-from flask import Flask
+from flask import Flask, request, jsonify
 from flask_cors import CORS
 from flask_migrate import Migrate
 from flask_restful import Api
@@ -70,6 +70,16 @@ def create_app():
     @app.route("/")
     def index():
         return {"message": "Welcome to the API!"}, 200
+
+    @app.route('/users/<int:user_id>', methods=['PATCH'])
+    def update_user(user_id):
+        user = User.query.get_or_404(user_id)
+        data = request.json
+        if 'avatar_url' in data:
+            user.avatar_url = data['avatar_url']
+        # ... handle other fields ...
+        db.session.commit()
+        return jsonify({"success": True, "user": user.to_dict()})
 
     return app
 
