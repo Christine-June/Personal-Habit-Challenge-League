@@ -34,6 +34,8 @@ class ChallengeParticipantSchema(ma.SQLAlchemyAutoSchema):
         load_instance = True
 
 class MessageSchema(ma.SQLAlchemyAutoSchema):
+    username = ma.Function(lambda obj: obj.user.username if obj.user else None)
+    avatar_url = ma.Function(lambda obj: obj.user.avatar_url if obj.user else None)
     class Meta:
         model = Message
         load_instance = True
