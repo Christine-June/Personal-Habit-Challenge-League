@@ -20,7 +20,10 @@ class User(db.Model, SerializerMixin):
     challenges_created = db.relationship("Challenge", back_populates="creator", cascade="all, delete-orphan")
     challenge_participations = db.relationship("ChallengeParticipant", back_populates="user", cascade="all, delete-orphan")
     challenge_entries = db.relationship("ChallengeEntry", back_populates="user", cascade="all, delete-orphan")
-    messages = db.relationship("Message", back_populates="user", cascade="all, delete-orphan")
+    sent_messages = db.relationship("Message", back_populates="sender", foreign_keys="Message.sender_id", cascade="all, delete-orphan")
+    received_messages = db.relationship("Message", back_populates="receiver", foreign_keys="Message.receiver_id", cascade="all, delete-orphan")
+
+
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password).decode('utf-8')
@@ -175,16 +178,21 @@ class Message(db.Model, SerializerMixin):
     __tablename__ = "messages"
 
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    sender_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    receiver_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     content = db.Column(db.String, nullable=False)
     reply_to_id = db.Column(db.Integer, db.ForeignKey('messages.id'), nullable=True)
     timestamp = db.Column(db.DateTime, server_default=db.func.now())
 
-    # Relationships
-    user = db.relationship('User', back_populates='messages')
-    parent = db.relationship('Message', remote_side=[id], back_populates='replies', foreign_keys=[reply_to_id])
-    replies = db.relationship('Message', back_populates='parent', cascade="all, delete-orphan", single_parent=True)
+    sender = db.relationship("User", foreign_keys=[sender_id], back_populates="sent_messages")
+    receiver = db.relationship("User", foreign_keys=[receiver_id], back_populates="received_messages")
+    parent = db.relationship("Message", remote_side=[id], back_populates="replies", foreign_keys=[reply_to_id])
+    replies = db.relationship("Message", back_populates="parent", cascade="all, delete-orphan", single_parent=True)
+
+    serialize_rules = ("-sender.sent_messages", "-receiver.received_messages", "-replies.parent",)
 
     def __repr__(self):
-        return f"<Message id={self.id} user_id={self.user_id}>"
+        return f"<Message id={self.id} sender_id={self.sender_id} receiver_id={self.receiver_id}>"
+
+
 

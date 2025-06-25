@@ -1,6 +1,6 @@
 from app import app
-from models import db, User, Habit, UserHabit, HabitEntry, Challenge, ChallengeParticipant, ChallengeEntry
-from datetime import date, timedelta
+from models import db, User, Habit, UserHabit, HabitEntry, Challenge, ChallengeParticipant, ChallengeEntry, Message
+from datetime import date, timedelta, datetime
 from faker import Faker
 import random
 
@@ -24,6 +24,21 @@ with app.app_context():
         users.append(user)
     db.session.commit()
     print(f"✅ Seeded {len(users)} users.")
+
+    print("💬 Seeding messages...")
+    messages = []
+    for _ in range(100):
+        sender, receiver = random.sample(users, 2)  # Ensure sender != receiver
+        msg = Message(
+            sender_id=sender.id,
+            receiver_id=receiver.id,
+            content=fake.sentence(),
+            timestamp=datetime.utcnow() - timedelta(minutes=random.randint(0, 10000))
+        )
+        messages.append(msg)
+    db.session.add_all(messages)
+    db.session.commit()
+    print(f"✅ Seeded {len(messages)} messages.")
 
     print("🔥 Seeding habits...")
     frequencies = ["daily", "weekly", "monthly"]
