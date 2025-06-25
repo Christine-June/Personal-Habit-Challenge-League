@@ -1,58 +1,61 @@
-from flask import Blueprint, request, jsonify
-from models import db, Habit, User
-from datetime import date
+from flask_restful import Resource
+from flask import request
+from models import db, Habit
+from schemas import HabitSchema
 
-habits_bp = Blueprint('habits_bp', __name__, url_prefix='/habits')
+habit_schema = HabitSchema()
+habits_schema = HabitSchema(many=True)
 
-# Get all habits
-@habits_bp.route('/', methods=['GET'])  
-def get_habits():
-    habits = Habit.query.all()
-    return jsonify([habit.to_dict() for habit in habits]), 200
-# Get a single habit by ID
-@habits_bp.route('/<int:habit_id>', methods=['GET'])
-def get_habit(habit_id):
-    habit = Habit.query.get(habit_id)
-    if habit:
-        return jsonify(habit.to_dict()), 200
-    return jsonify({"error": "Habit not found"}), 404
+class HabitListResource(Resource):
+    def get(self):  # GET /habits
+        habits = Habit.query.all()
+        return habits_schema.dump(habits), 200
 
-# Create a new habit
-@habits_bp.route("/", methods=["POST"])
-def create_habit():
-    data = request.get_json()
-    new_habit = Habit(
-        name=data.get("name"),
-        description=data.get("description"),
-        frequency=data.get("frequency"),
-        user_id=data.get("user_id")  # ✅ use this instead of created_by
-    )
-    db.session.add(new_habit)
-    db.session.commit()
-    return jsonify(new_habit.to_dict()), 201
+    def post(self):  # POST /habits
+        data = request.get_json()
+        # Validation
+        required_fields = ["name", "user_id"]
+        for field in required_fields:
+            if not data.get(field):
+                return {"error": f"{field} is required"}, 400
 
+        if "frequency" in data and data["frequency"] not in ["daily", "weekly", "monthly"]:
+            return {"error": "Frequency must be daily, weekly, or monthly"}, 400
 
+        new_habit = Habit(
+            name=data["name"],
+            description=data.get("description"),
+            frequency=data.get("frequency"),
+            user_id=data["user_id"]
+        )
+        db.session.add(new_habit)
+        db.session.commit()
+        return habit_schema.dump(new_habit), 201
 
-# Update a habit
-@habits_bp.route('/<int:habit_id>', methods=['PATCH'])
-def update_habit(habit_id):
-    habit = Habit.query.get(habit_id)
-    if not habit:
-        return jsonify({"error": "Habit not found"}), 404
+class HabitResource(Resource):
+    def get(self, habit_id):  # GET /habits/<id>
+        habit = Habit.query.get(habit_id)
+        if habit:
+            return habit_schema.dump(habit), 200
+        return {"error": "Habit not found"}, 404
 
-    data = request.get_json()
-    habit.name = data.get('name', habit.name)
-    habit.description = data.get('description', habit.description)
-    db.session.commit()
-    return jsonify(habit.to_dict()), 200
+    def patch(self, habit_id):  # PATCH /habits/<id>
+        habit = Habit.query.get(habit_id)
+        if not habit:
+            return {"error": "Habit not found"}, 404
+        data = request.get_json()
+        if "frequency" in data and data["frequency"] not in ["daily", "weekly", "monthly"]:
+            return {"error": "Frequency must be daily, weekly, or monthly"}, 400
+        habit.name = data.get('name', habit.name)
+        habit.description = data.get('description', habit.description)
+        habit.frequency = data.get('frequency', habit.frequency)
+        db.session.commit()
+        return habit_schema.dump(habit), 200
 
-# Delete a habit
-@habits_bp.route('/<int:habit_id>', methods=['DELETE'])
-def delete_habit(habit_id):
-    habit = Habit.query.get(habit_id)
-    if not habit:
-        return jsonify({"error": "Habit not found"}), 404
-
-    db.session.delete(habit)
-    db.session.commit()
-    return jsonify({"message": "Habit deleted"}), 200
+    def delete(self, habit_id):  # DELETE /habits/<id>
+        habit = Habit.query.get(habit_id)
+        if not habit:
+            return {"error": "Habit not found"}, 404
+        db.session.delete(habit)
+        db.session.commit()
+        return {"message": "Habit deleted"}, 200

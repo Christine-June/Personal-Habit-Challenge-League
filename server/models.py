@@ -1,16 +1,17 @@
 from datetime import datetime, date
 from config import db
-from werkzeug.security import generate_password_hash, check_password_hash  # <-- Added this line
+from flask_bcrypt import generate_password_hash, check_password_hash
+from sqlalchemy_serializer import SerializerMixin
 
 ### --- User Model --- ###
-class User(db.Model):
+class User(db.Model, SerializerMixin):
     __tablename__ = "users"
 
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
     password_hash = db.Column(db.String(128), nullable=False)
-    avatar_url = db.Column(db.String(255), nullable=True)  # ✅ Added avatar field
+    avatar_url = db.Column(db.String(255), nullable=True)
 
     # Relationships
     habits = db.relationship("Habit", back_populates="user", cascade="all, delete-orphan")
@@ -22,7 +23,7 @@ class User(db.Model):
     messages = db.relationship("Message", back_populates="user", cascade="all, delete-orphan")
 
     def set_password(self, password):
-        self.password_hash = generate_password_hash(password)
+        self.password_hash = generate_password_hash(password).decode('utf-8')
 
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
@@ -30,25 +31,9 @@ class User(db.Model):
     def __repr__(self):
         return f"<User {self.username}>"
 
-    def to_dict(self):
-        return {
-            "id": self.id,
-            "username": self.username,
-            "email": self.email,
-            "avatarUrl": self.avatar_url or "/placeholder-avatar.svg"  # Default avatar fallback
-        }
-
-    # ✅ Password hashing methods
-    def set_password(self, password):
-        self.password_hash = generate_password_hash(password)
-
-    def check_password(self, password):
-        return check_password_hash(self.password_hash, password)
-
-
 
 ### --- Habit Model --- ###
-class Habit(db.Model):
+class Habit(db.Model, SerializerMixin):
     __tablename__ = "habits"
 
     id = db.Column(db.Integer, primary_key=True)
@@ -65,21 +50,9 @@ class Habit(db.Model):
     def __repr__(self):
         return f"<Habit {self.name}>"
 
-    def to_dict(self):
-      return {
-        "id": self.id,
-        "name": self.name,
-        "description": self.description,
-        "frequency": self.frequency,
-        "user_id": self.user_id,
-        "user": {
-            "id": self.user.id,
-            "username": self.user.username
-        } if self.user else None
-    }
 
 ### --- UserHabit Model --- ###
-class UserHabit(db.Model):
+class UserHabit(db.Model, SerializerMixin):
     __tablename__ = "user_habits"
 
     id = db.Column(db.Integer, primary_key=True)
@@ -99,17 +72,9 @@ class UserHabit(db.Model):
     def __repr__(self):
         return f"<UserHabit user_id={self.user_id} habit_id={self.habit_id}>"
 
-    def to_dict(self):
-        return {
-            "id": self.id,
-            "user_id": self.user_id,
-            "habit_id": self.habit_id,
-            "start_date": self.start_date.isoformat() if self.start_date else None,
-            "end_date": self.end_date.isoformat() if self.end_date else None,
-        }
 
 ### --- HabitEntry Model --- ###
-class HabitEntry(db.Model):
+class HabitEntry(db.Model, SerializerMixin):
     __tablename__ = "habit_entries"
 
     id = db.Column(db.Integer, primary_key=True)
@@ -134,18 +99,9 @@ class HabitEntry(db.Model):
     def __repr__(self):
         return f"<HabitEntry user_id={self.user_id} habit_id={self.habit_id} date={self.date}>"
 
-    def to_dict(self):
-        return {
-            "id": self.id,
-            "user_id": self.user_id,
-            "habit_id": self.habit_id,
-            "progress": self.progress,
-            "notes": self.notes,
-            "date": self.date.isoformat() if self.date else None,
-        }
 
 ### --- Challenge Model --- ###
-class Challenge(db.Model):
+class Challenge(db.Model, SerializerMixin):
     __tablename__ = "challenges"
 
     id = db.Column(db.Integer, primary_key=True)
@@ -169,20 +125,9 @@ class Challenge(db.Model):
     def __repr__(self):
         return f"<Challenge {self.name}>"
 
-    def to_dict(self):
-        return {
-            "id": self.id,
-            "name": self.name,
-            "description": self.description,
-            "created_by": self.created_by,
-            "start_date": self.start_date.isoformat() if self.start_date else None,
-            "end_date": self.end_date.isoformat() if self.end_date else None,
-            "created_at": self.created_at.isoformat() if self.created_at else None,
-            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
-        }
 
 ### --- ChallengeParticipant Model --- ###
-class ChallengeParticipant(db.Model):
+class ChallengeParticipant(db.Model, SerializerMixin):
     __tablename__ = "challenge_participants"
 
     id = db.Column(db.Integer, primary_key=True)
@@ -202,17 +147,9 @@ class ChallengeParticipant(db.Model):
     def __repr__(self):
         return f"<ChallengeParticipant user_id={self.user_id} challenge_id={self.challenge_id}>"
 
-    def to_dict(self):
-        return {
-            "id": self.id,
-            "user_id": self.user_id,
-            "challenge_id": self.challenge_id,
-            "joined_date": self.joined_date.isoformat() if self.joined_date else None,
-            "reason": self.reason,
-        }
 
 ### --- ChallengeEntry Model --- ###
-class ChallengeEntry(db.Model):
+class ChallengeEntry(db.Model, SerializerMixin):
     __tablename__ = "challenge_entries"
 
     id = db.Column(db.Integer, primary_key=True)
@@ -232,17 +169,9 @@ class ChallengeEntry(db.Model):
     def __repr__(self):
         return f"<ChallengeEntry user_id={self.user_id} challenge_id={self.challenge_id} date={self.date}>"
 
-    def to_dict(self):
-        return {
-            "id": self.id,
-            "user_id": self.user_id,
-            "challenge_id": self.challenge_id,
-            "progress": self.progress,
-            "date": self.date.isoformat() if self.date else None,
-        }
 
 ### --- Message Model --- ###
-class Message(db.Model):
+class Message(db.Model, SerializerMixin):
     __tablename__ = "messages"
 
     id = db.Column(db.Integer, primary_key=True)
@@ -256,14 +185,6 @@ class Message(db.Model):
     parent = db.relationship('Message', remote_side=[id], back_populates='replies', foreign_keys=[reply_to_id])
     replies = db.relationship('Message', back_populates='parent', cascade="all, delete-orphan", single_parent=True)
 
+    def __repr__(self):
+        return f"<Message id={self.id} user_id={self.user_id}>"
 
-    def to_dict(self):
-        return {
-            "id": self.id,
-            "user_id": self.user_id,
-            "username": self.user.username,
-            "content": self.content,
-            "reply_to_id": self.reply_to_id,
-            "timestamp": self.timestamp.isoformat(),
-            "replies": [reply.to_dict() for reply in self.replies]
-        }

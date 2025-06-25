@@ -1,23 +1,30 @@
-from flask import Flask, request, jsonify
-from models import User  # Assuming you have a User model in models.py
+from flask import Flask, request
+from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
+from models import User
+from schemas import user_schema  # Make sure user_schema is defined in your schemas.py
 
-app = Flask(__name__)
+def register_auth_routes(app):
+    @app.route('/login', methods=['POST'])
+    def login():
+        data = request.get_json()
+        if not data:
+            return {"error": "Missing JSON body"}, 400
 
-@app.route('/login', methods=['POST'])
-def login():
-    data = request.get_json()
-    username = data.get('username')
-    password = data.get('password')
+        username = data.get('username')
+        password = data.get('password')
 
-    user = User.query.filter_by(username=username).first()
+        if not username or not password:
+            return {"error": "Username and password are required"}, 400
 
-    if user and user.check_password(password):
-        # Instead of just returning a message, also return user data
-        return jsonify({
-            "message": "Login succeeded",
-            "user": user.to_dict()  # Make sure to_dict() returns user info
-        }), 200
-    else:
-        return jsonify({"error": "Invalid credentials"}), 401
+        user = User.query.filter_by(username=username).first()
+        if user and user.check_password(password):
+            access_token = create_access_token(identity=user.id)
+            return {"access_token": access_token, "user": user_schema.dump(user)}, 200
+        return {"error": "Invalid credentials"}, 401
 
-# ...existing code...
+    @app.route('/protected', methods=['GET'])
+    @jwt_required()
+    def protected():
+        user_id = get_jwt_identity()
+        user = User.query.get(user_id)
+        return user_schema.dump(user), 200

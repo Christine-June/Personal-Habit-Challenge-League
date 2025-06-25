@@ -1,32 +1,33 @@
-from flask import Blueprint, request, jsonify
+from flask_restful import Resource
+from flask import request
 from models import Challenge, db
+from schemas import ChallengeSchema
 from datetime import datetime
 
-challenge_bp = Blueprint("challenge_bp", __name__, url_prefix="/challenges")
+challenge_schema = ChallengeSchema()
+challenges_schema = ChallengeSchema(many=True)
 
-@challenge_bp.route("/", methods=["GET"])
-def get_challenges():
-    challenges = Challenge.query.all()
-    return jsonify([c.to_dict() for c in challenges]), 200
+class ChallengeListResource(Resource):
+    def get(self):  # GET /challenges
+        challenges = Challenge.query.all()
+        return challenges_schema.dump(challenges), 200
 
-@challenge_bp.route("/<int:id>", methods=["GET"])
-def get_challenge(id):
-    challenge = Challenge.query.get_or_404(id)
-    return jsonify(challenge.to_dict()), 200
+    def post(self):  # POST /challenges
+        data = request.get_json()
+        # Validation
+        required_fields = ["name", "description", "created_by", "start_date", "end_date"]
+        for field in required_fields:
+            if not data.get(field):
+                return {"error": f"{field} is required"}, 400
 
+        try:
+            start_date = datetime.strptime(data["start_date"], "%Y-%m-%d").date()
+            end_date = datetime.strptime(data["end_date"], "%Y-%m-%d").date()
+        except Exception:
+            return {"error": "Invalid date format. Use YYYY-MM-DD."}, 400
 
-
-@challenge_bp.route("/", methods=["POST"])
-def create_challenge():
-    data = request.get_json()
-    print("Received data:", data)
-
-    try:
-        start_date = datetime.strptime(data.get("start_date"), "%Y-%m-%d").date() if data.get("start_date") else None
-        end_date = datetime.strptime(data.get("end_date"), "%Y-%m-%d").date() if data.get("end_date") else None
-
-        if start_date and end_date and start_date > end_date:
-            return jsonify({"error": "Start date must be before or equal to end date"}), 400
+        if start_date > end_date:
+            return {"error": "Start date must be before or equal to end date"}, 400
 
         new_challenge = Challenge(
             name=data["name"],
@@ -38,35 +39,41 @@ def create_challenge():
 
         db.session.add(new_challenge)
         db.session.commit()
-        return jsonify(new_challenge.to_dict()), 201
+        return challenge_schema.dump(new_challenge), 201
 
-    except Exception as e:
-        print("Error:", str(e))
-        return jsonify({"error": "Invalid challenge data", "details": str(e)}), 400
+class ChallengeResource(Resource):
+    def get(self, id):  # GET /challenges/<id>
+        challenge = Challenge.query.get_or_404(id)
+        return challenge_schema.dump(challenge), 200
 
-# ✅ PATCH to update an existing challenge
-@challenge_bp.route("/<int:id>", methods=["PATCH"])
-def update_challenge(id):
-    challenge = Challenge.query.get_or_404(id)
-    data = request.get_json()
+    def patch(self, id):  # PATCH /challenges/<id>
+        challenge = Challenge.query.get_or_404(id)
+        data = request.get_json()
 
-    if "name" in data:
-        challenge.name = data["name"]
-    if "description" in data:
-        challenge.description = data["description"]
-    if "created_by" in data:
-        challenge.created_by = data["created_by"]
-    if "start_date" in data:
-        challenge.start_date = datetime.strptime(data["start_date"], "%Y-%m-%d").date()
-    if "end_date" in data:
-        challenge.end_date = datetime.strptime(data["end_date"], "%Y-%m-%d").date()
+        if "start_date" in data or "end_date" in data:
+            try:
+                if "start_date" in data:
+                    challenge.start_date = datetime.strptime(data["start_date"], "%Y-%m-%d").date()
+                if "end_date" in data:
+                    challenge.end_date = datetime.strptime(data["end_date"], "%Y-%m-%d").date()
+            except Exception:
+                return {"error": "Invalid date format. Use YYYY-MM-DD."}, 400
 
-    db.session.commit()
-    return jsonify(challenge.to_dict()), 200
+            if challenge.start_date > challenge.end_date:
+                return {"error": "Start date must be before or equal to end date"}, 400
 
-@challenge_bp.route("/<int:id>", methods=["DELETE"])
-def delete_challenge(id):
-    challenge = Challenge.query.get_or_404(id)
-    db.session.delete(challenge)
-    db.session.commit()
-    return jsonify({"message": "Challenge deleted"}), 200
+        if "name" in data:
+            challenge.name = data["name"]
+        if "description" in data:
+            challenge.description = data["description"]
+        if "created_by" in data:
+            challenge.created_by = data["created_by"]
+
+        db.session.commit()
+        return challenge_schema.dump(challenge), 200
+
+    def delete(self, id):  # DELETE /challenges/<id>
+        challenge = Challenge.query.get_or_404(id)
+        db.session.delete(challenge)
+        db.session.commit()
+        return {"message": "Challenge deleted"}, 200

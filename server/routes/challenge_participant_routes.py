@@ -3,8 +3,6 @@ from flask_restful import Resource
 from models import db, ChallengeParticipant, Challenge
 from datetime import date
 
-challenge_participant_bp = Blueprint('challenge_participant_bp', __name__)
-# Make sure to also register this in app.py
 
 # ----- RESTful Resource Classes -----
 
@@ -105,28 +103,4 @@ class ParticipationStatus(Resource):
         ).first() is not None
 
         return {"joined": joined}, 200
-
-# ----- Blueprint-style endpoints -----
-
-@challenge_participant_bp.route('/challenges/<int:challenge_id>/participants', methods=['GET'])
-def list_participants(challenge_id):
-    participants = ChallengeParticipant.query.filter_by(challenge_id=challenge_id).all()
-    return jsonify([p.to_dict() for p in participants]), 200
-
-@challenge_participant_bp.route('/challenges/<int:challenge_id>/participants', methods=['POST'])
-def add_participant(challenge_id):
-    data = request.get_json()
-    user_id = data.get("user_id")
-
-    if not user_id:
-        return {"error": "Missing user_id"}, 400
-
-    if ChallengeParticipant.query.filter_by(user_id=user_id, challenge_id=challenge_id).first():
-        return jsonify({"error": "User already joined"}), 409
-
-    participant = ChallengeParticipant(user_id=user_id, challenge_id=challenge_id, joined_date=date.today())
-    db.session.add(participant)
-    db.session.commit()
-
-    return jsonify(participant.to_dict()), 201
 
