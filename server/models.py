@@ -253,7 +253,9 @@ class Message(db.Model):
 
     # Relationships
     user = db.relationship('User', back_populates='messages')
-    replies = db.relationship('Message', back_populates='parent', remote_side=[id], cascade="all, delete-orphan")
+    parent = db.relationship('Message', remote_side=[id], back_populates='replies', foreign_keys=[reply_to_id])
+    replies = db.relationship('Message', back_populates='parent', cascade="all, delete-orphan", single_parent=True)
+
 
     def to_dict(self):
         return {
