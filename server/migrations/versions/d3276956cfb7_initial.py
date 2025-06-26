@@ -1,8 +1,8 @@
-"""Initial migration
+"""Initial
 
-Revision ID: aa401c851234
+Revision ID: d3276956cfb7
 Revises: 
-Create Date: 2025-06-19 03:48:46.410069
+Create Date: 2025-06-26 23:06:39.078397
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = 'aa401c851234'
+revision = 'd3276956cfb7'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -23,6 +23,8 @@ def upgrade():
     sa.Column('username', sa.String(length=80), nullable=False),
     sa.Column('email', sa.String(length=120), nullable=False),
     sa.Column('password_hash', sa.String(length=128), nullable=False),
+    sa.Column('avatar_url', sa.String(length=255), nullable=True),
+    sa.Column('bio', sa.String(length=255), nullable=True),
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('email'),
     sa.UniqueConstraint('username')
@@ -34,8 +36,8 @@ def upgrade():
     sa.Column('created_by', sa.Integer(), nullable=False),
     sa.Column('start_date', sa.Date(), nullable=False),
     sa.Column('end_date', sa.Date(), nullable=False),
-    sa.Column('created_at', sa.DateTime(), nullable=True),
-    sa.Column('updated_at', sa.DateTime(), nullable=True),
+    sa.Column('created_at', sa.DateTime(), nullable=False),
+    sa.Column('updated_at', sa.DateTime(), nullable=False),
     sa.CheckConstraint('start_date < end_date', name='check_start_date_before_end_date'),
     sa.ForeignKeyConstraint(['created_by'], ['users.id'], name=op.f('fk_challenges_created_by_users')),
     sa.PrimaryKeyConstraint('id')
@@ -44,8 +46,21 @@ def upgrade():
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('name', sa.String(length=255), nullable=False),
     sa.Column('description', sa.Text(), nullable=True),
+    sa.Column('frequency', sa.String(length=50), nullable=True),
     sa.Column('user_id', sa.Integer(), nullable=False),
     sa.ForeignKeyConstraint(['user_id'], ['users.id'], name=op.f('fk_habits_user_id_users')),
+    sa.PrimaryKeyConstraint('id')
+    )
+    op.create_table('messages',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('sender_id', sa.Integer(), nullable=False),
+    sa.Column('receiver_id', sa.Integer(), nullable=False),
+    sa.Column('content', sa.String(), nullable=False),
+    sa.Column('reply_to_id', sa.Integer(), nullable=True),
+    sa.Column('timestamp', sa.DateTime(), server_default=sa.text('(CURRENT_TIMESTAMP)'), nullable=True),
+    sa.ForeignKeyConstraint(['receiver_id'], ['users.id'], name=op.f('fk_messages_receiver_id_users')),
+    sa.ForeignKeyConstraint(['reply_to_id'], ['messages.id'], name=op.f('fk_messages_reply_to_id_messages')),
+    sa.ForeignKeyConstraint(['sender_id'], ['users.id'], name=op.f('fk_messages_sender_id_users')),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_table('challenge_entries',
@@ -75,6 +90,7 @@ def upgrade():
     sa.Column('user_id', sa.Integer(), nullable=False),
     sa.Column('habit_id', sa.Integer(), nullable=False),
     sa.Column('progress', sa.String(length=255), nullable=False),
+    sa.Column('notes', sa.String(length=255), nullable=True),
     sa.Column('date', sa.Date(), nullable=True),
     sa.ForeignKeyConstraint(['habit_id'], ['habits.id'], name=op.f('fk_habit_entries_habit_id_habits')),
     sa.ForeignKeyConstraint(['user_id'], ['users.id'], name=op.f('fk_habit_entries_user_id_users')),
@@ -101,6 +117,7 @@ def downgrade():
     op.drop_table('habit_entries')
     op.drop_table('challenge_participants')
     op.drop_table('challenge_entries')
+    op.drop_table('messages')
     op.drop_table('habits')
     op.drop_table('challenges')
     op.drop_table('users')

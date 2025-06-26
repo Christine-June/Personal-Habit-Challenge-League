@@ -12,6 +12,7 @@ class User(db.Model, SerializerMixin):
     email = db.Column(db.String(120), unique=True, nullable=False)
     password_hash = db.Column(db.String(128), nullable=False)
     avatar_url = db.Column(db.String(255), nullable=True)
+    bio = db.Column(db.String(255), nullable=True)
 
     # Relationships
     habits = db.relationship("Habit", back_populates="user", cascade="all, delete-orphan")
@@ -22,6 +23,7 @@ class User(db.Model, SerializerMixin):
     challenge_entries = db.relationship("ChallengeEntry", back_populates="user", cascade="all, delete-orphan")
     sent_messages = db.relationship("Message", back_populates="sender", foreign_keys="Message.sender_id", cascade="all, delete-orphan")
     received_messages = db.relationship("Message", back_populates="receiver", foreign_keys="Message.receiver_id", cascade="all, delete-orphan")
+    comments = db.relationship("Comment", back_populates="user", cascade="all, delete-orphan")
 
 
 
@@ -49,6 +51,7 @@ class Habit(db.Model, SerializerMixin):
     user = db.relationship("User", back_populates="habits")
     user_habits = db.relationship("UserHabit", back_populates="habit", cascade="all, delete-orphan")
     habit_entries = db.relationship("HabitEntry", back_populates="habit", cascade="all, delete-orphan")
+    comments = db.relationship("Comment", back_populates="habit", cascade="all, delete-orphan")
 
     def __repr__(self):
         return f"<Habit {self.name}>"
@@ -120,6 +123,7 @@ class Challenge(db.Model, SerializerMixin):
     creator = db.relationship("User", back_populates="challenges_created")
     participants = db.relationship("ChallengeParticipant", back_populates="challenge", cascade="all, delete-orphan")
     entries = db.relationship("ChallengeEntry", back_populates="challenge", cascade="all, delete-orphan")
+    comments = db.relationship("Comment", back_populates="challenge", cascade="all, delete-orphan")
 
     __table_args__ = (
         db.CheckConstraint("start_date < end_date", name="check_start_date_before_end_date"),
@@ -193,6 +197,25 @@ class Message(db.Model, SerializerMixin):
 
     def __repr__(self):
         return f"<Message id={self.id} sender_id={self.sender_id} receiver_id={self.receiver_id}>"
+
+### --- Comment Model --- ###
+class Comment(db.Model, SerializerMixin):
+    __tablename__ = "comments"
+
+    id = db.Column(db.Integer, primary_key=True)
+    content = db.Column(db.String, nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    habit_id = db.Column(db.Integer, db.ForeignKey('habits.id'), nullable=True)
+    challenge_id = db.Column(db.Integer, db.ForeignKey('challenges.id'), nullable=True)
+    created_at = db.Column(db.DateTime, server_default=db.func.now())
+
+    # Relationships
+    user = db.relationship('User', back_populates='comments')
+    habit = db.relationship('Habit', back_populates='comments', foreign_keys=[habit_id])
+    challenge = db.relationship('Challenge', back_populates='comments', foreign_keys=[challenge_id])
+
+    def __repr__(self):
+        return f"<Comment id={self.id} user_id={self.user_id}>"
 
 
 

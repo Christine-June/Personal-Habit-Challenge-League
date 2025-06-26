@@ -1,8 +1,9 @@
 from flask_restful import Resource
 from flask import request
 from werkzeug.security import generate_password_hash
-from models import User, db
-from schemas import UserSchema
+from models import User, db, Habit, Challenge, ChallengeParticipant
+from schemas import UserSchema, user_schema, habits_schema, challenges_schema
+from sqlalchemy import func
 
 user_schema = UserSchema()
 users_schema = UserSchema(many=True)
@@ -87,3 +88,39 @@ class UserResource(Resource):
         except Exception as e:
             db.session.rollback()
             return {"error": f"Failed to delete user: {e}"}, 500
+
+class UserProfileResource(Resource):
+    def get(self, user_id):
+        user = User.query.get(user_id)
+        if not user:
+            return {"error": "User not found"}, 404
+
+        # Habits created by user
+        habits = Habit.query.filter_by(user_id=user_id).all()
+        # Challenges user is participating in
+        challenge_part_ids = [cp.challenge_id for cp in ChallengeParticipant.query.filter_by(user_id=user_id).all()]
+        challenges = Challenge.query.filter(Challenge.id.in_(challenge_part_ids)).all()
+
+        # Calculate stats
+        streak = 0  # You can implement streak logic if you want
+        stats = {
+            "habits": len(habits),
+            "challenges": len(challenges),
+            "streak": streak,
+        }
+
+        return {
+            "id": user.id,
+            "username": user.username,
+            "avatar_url": user.avatar_url,
+            "bio": getattr(user, "bio", ""),
+            "stats": stats,
+            "habits": [
+                {"id": h.id, "name": h.name, "description": h.description}
+                for h in habits
+            ],
+            "challenges": [
+                {"id": c.id, "name": c.name, "description": c.description}
+                for c in challenges
+            ],
+        }, 200

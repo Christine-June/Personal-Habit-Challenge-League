@@ -21,14 +21,15 @@ from models import (
 from schemas import ma
 
 from routes.habit_routes import HabitListResource, HabitResource
-from routes.user_routes import UserListResource, UserResource
+from routes.user_routes import UserListResource, UserResource, UserProfileResource
 from routes.user_habit_routes import UserHabitsResource, AssignHabitResource, RemoveHabitResource
 from routes.message_routes import MessageListResource
 from routes.challenge_routes import ChallengeListResource, ChallengeResource
-from routes.habit_entry_routes import HabitEntryListResource, HabitEntryResource
+#from routes.habit_entry_routes import HabitEntryListResource, HabitEntryResource
 from routes.challenge_entry_routes import ChallengeEntryRoutes
 from routes.challenge_participant_routes import ChallengeParticipantRoutes, ParticipationStatus
 from routes.auth import register_auth_routes
+from routes.feed_routes import FeedResource
 
 load_dotenv()
 
@@ -53,17 +54,19 @@ def create_app():
     api.add_resource(HabitResource, '/habits/<int:habit_id>')
     api.add_resource(UserListResource, '/users', '/users/')
     api.add_resource(UserResource, '/users/<int:user_id>')
+    api.add_resource(UserProfileResource, '/users/<int:user_id>/profile')
     api.add_resource(UserHabitsResource, '/user-habits/<int:user_id>')
     api.add_resource(AssignHabitResource, '/user-habits/assign')
     api.add_resource(RemoveHabitResource, '/user-habits/remove')
     api.add_resource(MessageListResource, '/messages')
     api.add_resource(ChallengeListResource, '/challenges', '/challenges/')
     api.add_resource(ChallengeResource, '/challenges/<int:id>')
-    api.add_resource(HabitEntryListResource, '/habit-entries', '/habit-entries/')
-    api.add_resource(HabitEntryResource, '/habit-entries/<int:entry_id>')
+    #api.add_resource(HabitEntryListResource, '/habit-entries', '/habit-entries/')
+    #api.add_resource(HabitEntryResource, '/habit-entries/<int:entry_id>')
     api.add_resource(ChallengeEntryRoutes, '/challenge-entries')
     api.add_resource(ChallengeParticipantRoutes, '/challenge-participants')
     api.add_resource(ParticipationStatus, '/challenges/<int:challenge_id>/participation-status')
+    api.add_resource(FeedResource, '/feed')
 
     register_auth_routes(app)
 
