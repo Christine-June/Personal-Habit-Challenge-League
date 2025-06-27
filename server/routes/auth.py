@@ -50,13 +50,12 @@ def register_auth_routes(app):
         if User.query.filter_by(email=email).first():
             return {"error": "Email already exists"}, 409
 
-        hashed_password = generate_password_hash(password).decode('utf-8')
         new_user = User(
             username=username,
             email=email,
-            password_hash=hashed_password,
-            avatar_url=avatar_url  # <-- save avatar_url
+            avatar_url=avatar_url
         )
+        new_user.set_password(password)
         db.session.add(new_user)
         db.session.commit()
         return {"success": True, "user": user_schema.dump(new_user)}, 201

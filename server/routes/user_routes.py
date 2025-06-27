@@ -1,6 +1,5 @@
+from flask import session, jsonify, request
 from flask_restful import Resource
-from flask import request
-from werkzeug.security import generate_password_hash
 from models import User, db, Habit, Challenge, ChallengeParticipant
 from schemas import UserSchema, user_schema, habits_schema, challenges_schema
 from sqlalchemy import func
@@ -28,8 +27,8 @@ class UserListResource(Resource):
         if User.query.filter_by(username=username).first():
             return {"error": "Username already exists"}, 409
 
-        hashed_password = generate_password_hash(password)
-        new_user = User(username=username, email=email, password_hash=hashed_password)
+        new_user = User(username=username, email=email)
+        new_user.set_password(password)  # Use Flask-Bcrypt
 
         try:
             db.session.add(new_user)
@@ -67,7 +66,7 @@ class UserResource(Resource):
         if email:
             user.email = email
         if password:
-            user.password_hash = generate_password_hash(password)
+            user.set_password(password)  # Use Flask-Bcrypt
 
         try:
             db.session.commit()
@@ -89,38 +88,54 @@ class UserResource(Resource):
             db.session.rollback()
             return {"error": f"Failed to delete user: {e}"}, 500
 
+class LoginResource(Resource):
+    def post(self):
+        data = request.get_json()
+        username = data.get("username")
+        password = data.get("password")
+        user = User.query.filter_by(username=username).first()
+        if user and user.check_password(password):
+            session["user_id"] = user.id
+            return {"user": user_schema.dump(user)}, 200
+        return {"error": "Invalid credentials"}, 401
+
+class SignupResource(Resource):
+    def post(self):
+        data = request.get_json()
+        username = data.get("username")
+        email = data.get("email")
+        password = data.get("password")
+        bio = data.get("bio", "")
+        avatar_url = data.get("avatar_url", "")
+
+        if not username or not email or not password:
+            return {"error": "Username, email, and password are required"}, 400
+
+        if User.query.filter_by(username=username).first():
+            return {"error": "Username already exists"}, 409
+        if User.query.filter_by(email=email).first():
+            return {"error": "Email already exists"}, 409
+
+        user = User(username=username, email=email, bio=bio, avatar_url=avatar_url)
+        user.set_password(password)
+        db.session.add(user)
+        db.session.commit()
+        session["user_id"] = user.id
+        return {"user": user_schema.dump(user)}, 201
+
 class UserProfileResource(Resource):
     def get(self, user_id):
         user = User.query.get(user_id)
         if not user:
             return {"error": "User not found"}, 404
+        return user.to_dict(), 200
 
-        # Habits created by user
-        habits = Habit.query.filter_by(user_id=user_id).all()
-        # Challenges user is participating in
-        challenge_part_ids = [cp.challenge_id for cp in ChallengeParticipant.query.filter_by(user_id=user_id).all()]
-        challenges = Challenge.query.filter(Challenge.id.in_(challenge_part_ids)).all()
-
-        # Calculate stats
-        streak = 0  # You can implement streak logic if you want
-        stats = {
-            "habits": len(habits),
-            "challenges": len(challenges),
-            "streak": streak,
-        }
-
-        return {
-            "id": user.id,
-            "username": user.username,
-            "avatar_url": user.avatar_url,
-            "bio": getattr(user, "bio", ""),
-            "stats": stats,
-            "habits": [
-                {"id": h.id, "name": h.name, "description": h.description}
-                for h in habits
-            ],
-            "challenges": [
-                {"id": c.id, "name": c.name, "description": c.description}
-                for c in challenges
-            ],
-        }, 200
+class CurrentUserResource(Resource):
+    def get(self):
+        user_id = session.get("user_id")
+        if not user_id:
+            return {"error": "Unauthorized"}, 401
+        user = User.query.get(user_id)
+        if not user:
+            return {"error": "User not found"}, 404
+        return user.to_dict(), 200

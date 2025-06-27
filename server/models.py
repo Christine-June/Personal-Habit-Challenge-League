@@ -11,8 +11,8 @@ class User(db.Model, SerializerMixin):
     username = db.Column(db.String(80), unique=True, nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
     password_hash = db.Column(db.String(128), nullable=False)
-    avatar_url = db.Column(db.String(255), nullable=True)
-    bio = db.Column(db.String(255), nullable=True)
+    bio = db.Column(db.String(255))
+    avatar_url = db.Column(db.String(255))
 
     # Relationships
     habits = db.relationship("Habit", back_populates="user", cascade="all, delete-orphan")

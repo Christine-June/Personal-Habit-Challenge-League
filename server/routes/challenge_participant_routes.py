@@ -1,6 +1,6 @@
 from flask import request, session, Blueprint, jsonify
 from flask_restful import Resource
-from models import db, ChallengeParticipant, Challenge
+from models import db, ChallengeParticipant, Challenge, User  # Make sure User is imported
 from datetime import date
 
 
@@ -97,6 +97,10 @@ class ParticipationStatus(Resource):
         user_id = session.get("user_id")
         if not user_id:
             return {"error": "Unauthorized"}, 401
+
+        user = User.query.get(user_id)
+        if not user:
+            return {"error": "User not found"}, 404
 
         joined = ChallengeParticipant.query.filter_by(
             user_id=user_id, challenge_id=challenge_id
