@@ -21,13 +21,13 @@ from models import (
 from schemas import ma
 
 from routes.habit_routes import HabitListResource, HabitResource
-from routes.user_routes import UserListResource, UserResource, LoginResource, SignupResource, UserProfileResource
+from routes.user_routes import UserListResource, UserResource, SignupResource, UserProfileResource
 from routes.user_habit_routes import UserHabitsResource, AssignHabitResource, RemoveHabitResource
 from routes.message_routes import MessageListResource
 from routes.challenge_routes import ChallengeListResource
 from routes.challenge_entry_routes import ChallengeEntryRoutes
-from routes.challenge_participant_routes import ChallengeParticipantRoutes, ParticipationStatus
-from routes.auth import register_auth_routes
+from routes.challenge_participant_routes import ChallengeParticipantRoutes, ParticipationStatus, ChallengeParticipantResource
+from routes.auth import LoginResource, SignupResource
 from routes.feed_routes import FeedResource
 from routes.user_routes import CurrentUserResource
 
@@ -37,9 +37,10 @@ bcrypt = Bcrypt()
 
 def create_app():
     app = Flask(__name__)
-    # Allow all origins (for development)
-    CORS(app, origins=["http://localhost:5173", "http://127.0.0.1:5173"], supports_credentials=True)
-    app.secret_key = os.environ.get("SECRET_KEY", "dev-secret-key")  # <-- Add this line
+    CORS(app, supports_credentials=True, origins=[
+        "http://localhost:5173", "http://127.0.0.1:5173"
+    ])
+    app.secret_key = os.environ.get("SECRET_KEY", "dev-secret-key")
     app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("SQLALCHEMY_DATABASE_URI", "sqlite:///app.db")
     app.config["JWT_SECRET_KEY"] = os.environ.get("JWT_SECRET_KEY", "dev-secret")
     app.json.compact = False
@@ -64,16 +65,16 @@ def create_app():
     api.add_resource(RemoveHabitResource, '/user-habits/remove')
     api.add_resource(MessageListResource, '/messages')
     api.add_resource(ChallengeListResource, '/challenges', '/challenges/')
-    #api.add_resource(ChallengeResource, '/challenges/<int:id>')
-    #api.add_resource(HabitEntryListResource, '/habit-entries', '/habit-entries/')
-    #api.add_resource(HabitEntryResource, '/habit-entries/<int:entry_id>')
     api.add_resource(ChallengeEntryRoutes, '/challenge-entries')
     api.add_resource(ChallengeParticipantRoutes, '/challenge-participants')
     api.add_resource(ParticipationStatus, '/challenges/<int:challenge_id>/participation-status')
     api.add_resource(FeedResource, '/feed')
     api.add_resource(CurrentUserResource, "/me")
-
-    register_auth_routes(app)
+    api.add_resource(
+        ChallengeParticipantResource,
+        '/challenges/<int:challenge_id>/participants',
+        endpoint='challenge_participants'
+    )
 
     @app.route("/")
     def index():
@@ -85,11 +86,9 @@ def create_app():
         data = request.json
         if 'avatar_url' in data:
             user.avatar_url = data['avatar_url']
-        # ... handle other fields ...
         db.session.commit()
         return jsonify({"success": True, "user": user.to_dict()})
 
-    # Add CORS headers to all responses (including errors)
     @app.after_request
     def add_cors_headers(response):
         origin = request.headers.get("Origin")

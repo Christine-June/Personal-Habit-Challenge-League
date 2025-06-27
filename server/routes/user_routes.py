@@ -88,17 +88,6 @@ class UserResource(Resource):
             db.session.rollback()
             return {"error": f"Failed to delete user: {e}"}, 500
 
-class LoginResource(Resource):
-    def post(self):
-        data = request.get_json()
-        username = data.get("username")
-        password = data.get("password")
-        user = User.query.filter_by(username=username).first()
-        if user and user.check_password(password):
-            session["user_id"] = user.id
-            return {"user": user_schema.dump(user)}, 200
-        return {"error": "Invalid credentials"}, 401
-
 class SignupResource(Resource):
     def post(self):
         data = request.get_json()

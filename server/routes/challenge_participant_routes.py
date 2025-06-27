@@ -1,6 +1,6 @@
-from flask import request, session, Blueprint, jsonify
+from flask import request, session
 from flask_restful import Resource
-from models import db, ChallengeParticipant, Challenge, User  # Make sure User is imported
+from models import db, ChallengeParticipant, Challenge
 from datetime import date
 
 
@@ -107,4 +107,34 @@ class ParticipationStatus(Resource):
         ).first() is not None
 
         return {"joined": joined}, 200
+
+
+class ChallengeParticipantResource(Resource):
+    def options(self, challenge_id):
+        return '', 200
+
+    def post(self, challenge_id):
+        user_id = session.get("user_id")
+        if not user_id:
+            return {"error": "Unauthorized"}, 401
+
+        challenge = Challenge.query.get(challenge_id)
+        if not challenge:
+            return {"error": "Challenge not found"}, 404
+
+        already_joined = ChallengeParticipant.query.filter_by(
+            user_id=user_id, challenge_id=challenge_id
+        ).first()
+        if already_joined:
+            return {"error": "Already joined this challenge"}, 409
+
+        participation = ChallengeParticipant(
+            user_id=user_id,
+            challenge_id=challenge_id,
+            joined_date=date.today()
+        )
+        db.session.add(participation)
+        db.session.commit()
+
+        return {"message": "Joined successfully", "challenge_id": challenge_id}, 201
 

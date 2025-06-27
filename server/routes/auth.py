@@ -4,10 +4,16 @@ from models import User
 from schemas import user_schema
 from flask_bcrypt import generate_password_hash
 from config import db
+from flask_restful import Resource, Api
 
-def register_auth_routes(app):
-    @app.route('/login', methods=['POST'])
-    def login():
+
+    
+class LoginResource(Resource):
+    def options(self):
+        # CORS preflight support
+        return '', 200
+
+    def post(self):
         data = request.get_json()
         if not data:
             return {"error": "Missing JSON body"}, 400
@@ -24,23 +30,51 @@ def register_auth_routes(app):
             return {"access_token": access_token, "user": user_schema.dump(user)}, 200
         return {"error": "Invalid credentials"}, 401
 
-    @app.route('/protected', methods=['GET'])
-    @jwt_required()
-    def protected():
-        user_id = get_jwt_identity()
-        user = User.query.get(user_id)
-        return user_schema.dump(user), 200
 
-    @app.route('/signup', methods=['POST', 'OPTIONS'])
-    def signup():
-        if request.method == 'OPTIONS':
-            return {}, 200  # Allow preflight
 
+
+@jwt_required()
+def protected():
+    user_id = get_jwt_identity()
+    user = User.query.get(user_id)
+    return user_schema.dump(user), 200
+
+
+
+    data = request.get_json()
+    username = data.get('username')
+    email = data.get('email')
+    password = data.get('password')
+    avatar_url = data.get('avatar_url')
+
+    if not username or not email or not password:
+        return {"error": "Username, email, and password are required"}, 400
+
+    if User.query.filter_by(username=username).first():
+        return {"error": "Username already exists"}, 409
+    if User.query.filter_by(email=email).first():
+        return {"error": "Email already exists"}, 409
+
+    new_user = User(
+        username=username,
+        email=email,
+        avatar_url=avatar_url
+    )
+    new_user.set_password(password)
+    db.session.add(new_user)
+    db.session.commit()
+    return {"success": True, "user": user_schema.dump(new_user)}, 201
+
+class SignupResource(Resource):
+    def options(self):
+        return '', 200
+
+    def post(self):
         data = request.get_json()
         username = data.get('username')
         email = data.get('email')
         password = data.get('password')
-        avatar_url = data.get('avatar_url')  # <-- get avatar_url from request
+        avatar_url = data.get('avatar_url')
 
         if not username or not email or not password:
             return {"error": "Username, email, and password are required"}, 400
