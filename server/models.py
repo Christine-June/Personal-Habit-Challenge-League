@@ -25,7 +25,14 @@ class User(db.Model, SerializerMixin):
     received_messages = db.relationship("Message", back_populates="receiver", foreign_keys="Message.receiver_id", cascade="all, delete-orphan")
     comments = db.relationship("Comment", back_populates="user", cascade="all, delete-orphan")
 
-
+    serialize_rules = (
+        "-challenges_created.creator",
+        "-challenges.creator",
+        "-habit_entries.user",
+        "-user_habits.user",
+        "-challenge_participations.user",
+        "-habits.user",  # Prevent recursion
+    )
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password).decode('utf-8')
@@ -113,17 +120,19 @@ class Challenge(db.Model, SerializerMixin):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(255), nullable=False)
     description = db.Column(db.Text, nullable=False)
-    created_by = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    created_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     start_date = db.Column(db.Date, nullable=False)
     end_date = db.Column(db.Date, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 
     # Relationships
-    creator = db.relationship("User", back_populates="challenges_created")
+    creator = db.relationship('User', back_populates='challenges_created')
     participants = db.relationship("ChallengeParticipant", back_populates="challenge", cascade="all, delete-orphan")
     entries = db.relationship("ChallengeEntry", back_populates="challenge", cascade="all, delete-orphan")
     comments = db.relationship("Comment", back_populates="challenge", cascade="all, delete-orphan")
+
+    serialize_rules = ("-creator.challenges_created", "-participants.challenge")
 
     __table_args__ = (
         db.CheckConstraint("start_date < end_date", name="check_start_date_before_end_date"),

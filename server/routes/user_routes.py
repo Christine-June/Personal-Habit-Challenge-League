@@ -128,7 +128,12 @@ class UserProfileResource(Resource):
         user = User.query.get(user_id)
         if not user:
             return {"error": "User not found"}, 404
-        return user.to_dict(), 200
+        user_dict = user.to_dict()
+        user_dict["stats"] = user_dict.get("stats", {})
+        user_dict["stats"]["challenges"] = len(user.challenges_created)
+        user_dict["stats"]["habits"] = len(user.habits)
+        user_dict["habits"] = [habit.to_dict() for habit in user.habits]
+        return user_dict, 200
 
 class CurrentUserResource(Resource):
     def get(self):
@@ -139,3 +144,7 @@ class CurrentUserResource(Resource):
         if not user:
             return {"error": "User not found"}, 404
         return user.to_dict(), 200
+
+
+
+

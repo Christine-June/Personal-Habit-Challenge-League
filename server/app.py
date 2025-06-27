@@ -24,8 +24,7 @@ from routes.habit_routes import HabitListResource, HabitResource
 from routes.user_routes import UserListResource, UserResource, LoginResource, SignupResource, UserProfileResource
 from routes.user_habit_routes import UserHabitsResource, AssignHabitResource, RemoveHabitResource
 from routes.message_routes import MessageListResource
-from routes.challenge_routes import ChallengeListResource, ChallengeResource
-#from routes.habit_entry_routes import HabitEntryListResource, HabitEntryResource
+from routes.challenge_routes import ChallengeListResource
 from routes.challenge_entry_routes import ChallengeEntryRoutes
 from routes.challenge_participant_routes import ChallengeParticipantRoutes, ParticipationStatus
 from routes.auth import register_auth_routes
@@ -38,8 +37,9 @@ bcrypt = Bcrypt()
 
 def create_app():
     app = Flask(__name__)
+    # Allow all origins (for development)
+    CORS(app, origins=["http://localhost:5173", "http://127.0.0.1:5173"], supports_credentials=True)
     app.secret_key = os.environ.get("SECRET_KEY", "dev-secret-key")  # <-- Add this line
-    CORS(app, supports_credentials=True)
     app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("SQLALCHEMY_DATABASE_URI", "sqlite:///app.db")
     app.config["JWT_SECRET_KEY"] = os.environ.get("JWT_SECRET_KEY", "dev-secret")
     app.json.compact = False
@@ -64,7 +64,7 @@ def create_app():
     api.add_resource(RemoveHabitResource, '/user-habits/remove')
     api.add_resource(MessageListResource, '/messages')
     api.add_resource(ChallengeListResource, '/challenges', '/challenges/')
-    api.add_resource(ChallengeResource, '/challenges/<int:id>')
+    #api.add_resource(ChallengeResource, '/challenges/<int:id>')
     #api.add_resource(HabitEntryListResource, '/habit-entries', '/habit-entries/')
     #api.add_resource(HabitEntryResource, '/habit-entries/<int:entry_id>')
     api.add_resource(ChallengeEntryRoutes, '/challenge-entries')
@@ -92,7 +92,9 @@ def create_app():
     # Add CORS headers to all responses (including errors)
     @app.after_request
     def add_cors_headers(response):
-        response.headers["Access-Control-Allow-Origin"] = "http://127.0.0.1:5173"
+        origin = request.headers.get("Origin")
+        if origin in ["http://localhost:5173", "http://127.0.0.1:5173"]:
+            response.headers["Access-Control-Allow-Origin"] = origin
         response.headers["Access-Control-Allow-Credentials"] = "true"
         response.headers["Access-Control-Allow-Headers"] = "Content-Type,Authorization"
         response.headers["Access-Control-Allow-Methods"] = "GET,POST,PUT,DELETE,OPTIONS"
