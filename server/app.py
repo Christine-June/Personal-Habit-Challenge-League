@@ -36,7 +36,13 @@ bcrypt = Bcrypt()
 
 def create_app():
     app = Flask(__name__)
-    CORS(app, supports_credentials=True)  # <-- This enables CORS for all routes
+    
+    # Updated CORS to allow frontend dev origin
+    CORS(app, supports_credentials=True, origins=[
+        "http://localhost:5173",  # Vite default
+
+    ])
+
     app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("SQLALCHEMY_DATABASE_URI", "sqlite:///app.db")
     app.config["JWT_SECRET_KEY"] = os.environ.get("JWT_SECRET_KEY", "dev-secret")
     app.json.compact = False
@@ -74,10 +80,16 @@ def create_app():
     @app.route('/users/<int:user_id>', methods=['PATCH'])
     def update_user(user_id):
         user = User.query.get_or_404(user_id)
-        data = request.json
+        data = request.get_json()
+
+        if not data:
+            return jsonify({"error": "Missing JSON data"}), 400
+
         if 'avatar_url' in data:
             user.avatar_url = data['avatar_url']
-        # ... handle other fields ...
+        
+        # Optional: handle other fields (e.g. name, email)
+        
         db.session.commit()
         return jsonify({"success": True, "user": user.to_dict()})
 
