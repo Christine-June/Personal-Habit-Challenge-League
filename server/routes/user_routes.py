@@ -54,6 +54,7 @@ class UserResource(Resource):
         username = data.get('username')
         email = data.get('email')
         password = data.get('password')
+        avatar_url = data.get('avatar_url')  # ✅ Add avatar_url handling
 
         if email and email != user.email and User.query.filter_by(email=email).first():
             return {"error": "Email already exists"}, 409
@@ -67,6 +68,8 @@ class UserResource(Resource):
             user.email = email
         if password:
             user.password_hash = generate_password_hash(password)
+        if avatar_url is not None:  # ✅ Only update if explicitly provided
+            user.avatar_url = avatar_url
 
         try:
             db.session.commit()
