@@ -1,10 +1,14 @@
 from flask import request, session
 from flask_restful import Resource
 from models import Challenge, db
-from schemas import challenge_schema
+from schemas import challenge_schema, challenges_schema
 from datetime import datetime
 
 class ChallengeListResource(Resource):
+    def get(self):
+        challenges = Challenge.query.all()
+        return challenges_schema.dump(challenges), 200
+
     def post(self):
         data = request.get_json()
         name = data.get("name")

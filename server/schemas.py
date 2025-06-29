@@ -11,11 +11,13 @@ class UserSchema(ma.SQLAlchemyAutoSchema):
 class HabitSchema(ma.SQLAlchemyAutoSchema):
     class Meta:
         model = Habit
+        include_fk = True  # This ensures user_id is included
         load_instance = True
 
 class ChallengeSchema(ma.SQLAlchemyAutoSchema):
     class Meta:
         model = Challenge
+        include_fk = True  # <-- Add this line if not present
         load_instance = True
 
 class MessageSchema(ma.SQLAlchemyAutoSchema):
