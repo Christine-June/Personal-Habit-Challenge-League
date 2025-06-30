@@ -40,7 +40,11 @@ def create_app():
     app = Flask(__name__)
     
     # Allow Vite and frontend dev server
-    CORS(app, supports_credentials=True, origins=["http://localhost:5173"])
+    CORS(app, supports_credentials=True, origins=[
+    "http://localhost:5173",
+    "https://personal-habit-league-2.vercel.app"
+])
+
 
     app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("SQLALCHEMY_DATABASE_URI", "sqlite:///app.db")
     app.config["JWT_SECRET_KEY"] = os.environ.get("JWT_SECRET_KEY", "dev-secret")
