@@ -17,6 +17,8 @@ sqlalchemy-serializer = "*"
 python-dotenv = "*"
 marshmallow-sqlalchemy = "*"
 gunicorn = "*"
+flask_migrate = "*"
+flask-migrate = "*"
 
 [requires]
 python_full_version = "3.10.13"
