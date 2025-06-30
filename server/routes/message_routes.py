@@ -13,14 +13,20 @@ class MessageListResource(Resource):
 
     def post(self):  # POST /messages
         data = request.get_json()
-        user_id = data.get('user_id')
+        sender_id = data.get('sender_id')
+        receiver_id = data.get('receiver_id')
         content = data.get('content')
         reply_to_id = data.get('reply_to_id')
 
-        if not user_id or not content:
-            return {'error': 'Missing user_id or content'}, 400
+        if not sender_id or not receiver_id or not content:
+            return {'error': 'Missing sender_id, receiver_id, or content'}, 400
 
-        message = Message(user_id=user_id, content=content, reply_to_id=reply_to_id)
+        message = Message(
+            sender_id=sender_id,
+            receiver_id=receiver_id,
+            content=content,
+            reply_to_id=reply_to_id
+        )
         db.session.add(message)
         db.session.commit()
         return message_schema.dump(message), 201

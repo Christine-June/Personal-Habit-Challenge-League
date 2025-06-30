@@ -1,6 +1,6 @@
 from flask_restful import Resource
-from flask import request
-from models import Challenge, db
+from flask import request, jsonify
+from models import Challenge, ChallengeParticipant, ChallengeEntry, User, db
 from schemas import ChallengeSchema
 from datetime import datetime
 
@@ -14,7 +14,6 @@ class ChallengeListResource(Resource):
 
     def post(self):  # POST /challenges
         data = request.get_json()
-        # Validation
         required_fields = ["name", "description", "created_by", "start_date", "end_date"]
         for field in required_fields:
             if not data.get(field):
@@ -77,3 +76,44 @@ class ChallengeResource(Resource):
         db.session.delete(challenge)
         db.session.commit()
         return {"message": "Challenge deleted"}, 200
+
+# New: GET /challenges/<id>/participants
+class ChallengeParticipantsResource(Resource):
+    def get(self, id):
+        challenge = Challenge.query.get_or_404(id)
+        participants = [cp.user for cp in challenge.participants]
+        return [p.to_dict() for p in participants], 200
+
+    def post(self, id):
+        data = request.get_json()
+        username = data.get("username")
+
+        challenge = Challenge.query.get_or_404(id)
+        user = User.query.filter_by(username=username).first()
+
+        if not user:
+            return {"error": "User not found"}, 404
+
+        existing = ChallengeParticipant.query.filter_by(user_id=user.id, challenge_id=id).first()
+        if existing:
+            return {"message": "User already joined"}, 200
+
+        new_participant = ChallengeParticipant(user_id=user.id, challenge_id=id)
+        db.session.add(new_participant)
+        db.session.commit()
+        return user.to_dict(), 201
+
+# New: GET /challenges/<id>/entries
+class ChallengeEntriesResource(Resource):
+    def get(self, id):
+        challenge = Challenge.query.get_or_404(id)
+        entries = challenge.entries
+        return [
+            {
+                "id": e.id,
+                "username": e.user.username,
+                "content": e.progress,
+                "createdAt": e.date.isoformat(),
+            }
+            for e in entries
+        ], 200
