@@ -2,10 +2,8 @@ from flask_restful import Resource
 from flask import request
 from datetime import date
 from models import HabitEntry, db
-from schemas import HabitEntrySchema
 
-habit_entry_schema = HabitEntrySchema()
-habit_entries_schema = HabitEntrySchema(many=True)
+
 
 class HabitEntryListResource(Resource):
     def get(self):  # GET /habit-entries
